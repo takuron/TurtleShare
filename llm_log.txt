@@ -1,0 +1,8 @@
+[2026-03-25T20:08:19+08:00] Created architecture document (docs/architecture.md) for TurtleShare membership platform with Axum/SQLite stack, defining database schema, API endpoints, auth flow, and file storage strategy
+[2026-03-25T20:19:17+08:00] Updated architecture: changed to user_subscriptions table with time-based tier tracking, ISO 8601 timestamps, independent file uploads, articles with file_links field
+[2026-03-25T20:46:29+08:00] Major architecture update: removed file auth, changed file path to {BASEDIR}/files/{uuid}/{filename}, added RESTful CRUD APIs for all resources, added article cover_image/is_public fields, removed published_at (use created_at), changed timestamps to RFC 3339 with timezone
+[2026-03-25T21:03:17+08:00] Added user email/note fields, user tier query API, public articles API, and comprehensive JSON response format specification with examples
+[2026-03-25T21:13:52+08:00] Added kv_store table for runtime data, JWT secret rotation mechanism with configurable rotation_days in config.toml
+[2026-03-25T21:28:57+08:00] Updated JWT rotation strategy: dual-key system with jwt_secret_current/previous/date in kv_store, verification tries both keys, assumes both secure
+[2026-03-25T21:36:19+08:00] Changed JWT secret generation to SHA256(config.jwt.secret + random_uuid) for enhanced security, prevents initial secret leakage
+[2026-03-25T21:39:18+08:00] Added user password change API endpoint (PUT /api/users/password) with current password verification
