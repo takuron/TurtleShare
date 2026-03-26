@@ -10,10 +10,10 @@
 - [x] Validate configuration on startup
 
 ### Database / 数据库
-- [ ] Create database initialization module
-- [ ] Implement schema.sql with all tables (users, user_subscriptions, articles, files, kv_store)
-- [ ] Add database migration support
-- [ ] Create connection pool setup
+- [x] Create database initialization module
+- [x] Implement schema.sql with all tables (users, user_subscriptions, articles, files, kv_store)
+- [x] Add database migration support
+- [x] Create connection pool setup
 
 ### JWT Utilities / JWT 工具
 - [ ] Implement JWT secret generation (SHA256 + UUID)

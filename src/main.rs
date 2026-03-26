@@ -1,4 +1,5 @@
 mod config;
+mod db;
 mod utils;
 mod error;
 
@@ -24,6 +25,12 @@ struct Args {
     // // 配置文件路径。
     #[arg(short = 'c', long = "config", default_value = "config.toml")]
     config: String,
+
+    /// Require an existing database file. If not present, the server will error out instead of creating it.
+    //
+    // // 强制要求存在现有的数据库文件。如果不存在，服务器将报错而不是创建它。
+    #[arg(long = "require-existing-db")]
+    require_existing_db: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -76,16 +83,28 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let config = Config::load(&args.config)?;
     tracing::info!("Successfully loaded configuration for: {}", config.site_info.name);
 
-    // 5. 定义路由。
+    // 5. 初始化数据库连接。
+    let pool = db::init_db(&config.database.path, args.require_existing_db).await?;
+    tracing::info!("Database initialized successfully.");
+
+    // 5.5. 确保存储目录存在。
+    if !std::path::Path::new(&config.storage.files_path).exists() {
+        std::fs::create_dir_all(&config.storage.files_path)?;
+        tracing::info!("Created storage directory at: {}", config.storage.files_path);
+    }
+
+    // 6. 定义路由。
     let app = Router::new()
         .route("/", get(|| async { "TurtleShare API is running!" }))
         .route("/api/health", get(health_check))
         .route("/api/public/site-info", get({
             let site_info = config.site_info.clone();
             move || async { Json(ApiResponse { success: true, data: site_info }) }
-        }));
+        }))
+        // Share db pool with handlers if needed, e.g.: .with_state(pool)
+        ;
 
-    // 6. 启动服务器。
+    // 7. 启动服务器。
     let addr = format!("{}:{}", config.server.host, config.server.port)
         .parse::<SocketAddr>()?;
 

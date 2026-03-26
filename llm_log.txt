@@ -16,3 +16,5 @@
 [2026-03-26T17:04:46+08:00] Upgraded argon2 from 0.5.3 to 0.6.0-rc.8 and rand from 0.8.5 to 0.10.0, fixed API compatibility issues in hash.rs
 [2026-03-26T17:07:37+08:00] Removed unused rand dependency, added unit tests for hash module
 [2026-03-26T17:10:48+08:00] Enhanced hash module unit tests: added tests for invalid hash format, corrupted hash, and empty password cases
+[2026-03-26T17:49:58+08:00] Implemented database initialization with sqlx, including table creation, connection pool, and added --require-existing-db CLI argument.
+[2026-03-26T18:01:45+08:00] Added automatic creation of the storage files directory upon server startup if it does not exist.
