@@ -13,3 +13,6 @@
 [2026-03-26T16:26:20+08:00] Refined CLI with hash-pw subcommand and implemented salted Argon2id password hashing with :turtle suffix. Updated architecture and API docs with frontend examples.
 [2026-03-26T16:34:01+08:00] Refined Argon2id parameters (m=19456, t=2, p=1) and updated architecture docs with a matching hash-wasm JS example. Switched error handling to thiserror and implemented Axum IntoResponse for AppError.
 [2026-03-26T16:53:02+08:00] Reverted to standard Argon2id hashing by removing :turtle suffix salting. Simplified architecture and API docs accordingly.
+[2026-03-26T17:04:46+08:00] Upgraded argon2 from 0.5.3 to 0.6.0-rc.8 and rand from 0.8.5 to 0.10.0, fixed API compatibility issues in hash.rs
+[2026-03-26T17:07:37+08:00] Removed unused rand dependency, added unit tests for hash module
+[2026-03-26T17:10:48+08:00] Enhanced hash module unit tests: added tests for invalid hash format, corrupted hash, and empty password cases
