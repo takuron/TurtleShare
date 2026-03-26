@@ -16,11 +16,11 @@
 - [x] Create connection pool setup
 
 ### JWT Utilities / JWT 工具
-- [ ] Implement JWT secret generation (SHA256 + UUID)
-- [ ] Add JWT secret rotation logic
-- [ ] Implement token signing with jwt_secret_current
-- [ ] Implement token verification (try current, fallback to previous)
-- [ ] Add KV store operations for JWT secrets
+- [x] Implement JWT secret generation (SHA256 + UUID)
+- [x] Add JWT secret rotation logic
+- [x] Implement token signing with jwt_secret_current
+- [x] Implement token verification (try current, fallback to previous)
+- [x] Add KV store operations for JWT secrets
 
 ## Phase 2: Admin Features / 管理员功能
 
