@@ -17,7 +17,11 @@ src/
 │   ├── subscription.rs  # Subscription model / 订阅模型 ✅
 │   └── file.rs          # File metadata model / 文件元数据模型 ✅
 ├── handlers/            # HTTP handlers / HTTP 处理器
-│   ├── mod.rs           # ✅
+│   ├── mod.rs           # Module exports / 模块导出 ✅
+│   ├── common.rs        # Common types (ApiResponse) / 通用类型 ✅
+│   ├── routes.rs        # Main router assembly / 主路由组装器 ✅
+│   ├── public.rs        # Public endpoints / 公开端点 ✅
+│   ├── static_files.rs  # Static file serving / 静态文件服务 ✅
 │   ├── admin.rs         # Admin endpoints / 管理员端点 ⏳
 │   ├── user.rs          # User endpoints / 用户端点 ⏳
 │   ├── article.rs       # Article endpoints / 文章端点 ⏳

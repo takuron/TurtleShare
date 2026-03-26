@@ -54,6 +54,12 @@ pub struct DatabaseConfig {
 pub struct StorageConfig {
     pub files_path: String,
     pub max_upload_size_mb: u64,
+    #[serde(default = "default_static_path")]
+    pub static_path: String,
+}
+
+fn default_static_path() -> String {
+    "./static".to_string()
 }
 
 /// JWT authentication configuration.

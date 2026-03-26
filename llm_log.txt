@@ -23,3 +23,6 @@
 [2026-03-26T18:16:12+08:00] Reorganized db module into db/ directory with separate schema.rs file following the designed architecture.
 [2026-03-26T18:26:51+08:00] Implemented JWT utilities with key rotation support - generate/verify tokens, SHA256-based secret derivation, automatic rotation based on config
 [2026-03-26T18:51:42+08:00] Integrated JWT manager into server initialization with automatic daily rotation check background task
+[2026-03-26T19:07:32+08:00] Refactored route definitions from main.rs to handlers/routes.rs module
+[2026-03-26T19:12:15+08:00] Refactored handlers module using Plan A: separated common types, public routes, and main router assembly
+[2026-03-26T19:19:51+08:00] Implemented static file serving: added tower-http dependency, created static_files.rs handler, configured routes for /files and frontend fallback

@@ -8,12 +8,11 @@ mod middleware;
 
 use crate::config::Config;
 use crate::utils::{hash, jwt::JwtManager};
-use axum::{routing::get, Json, Router};
+use crate::handlers::create_router;
 use clap::{Parser, Subcommand};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use serde::Serialize;
 
 /// TurtleShare: A membership content distribution platform.
 //
@@ -48,15 +47,6 @@ enum Commands {
         // // 要哈希的原始密码。
         password: String,
     },
-}
-
-/// Standard API response wrapper.
-//
-// // 标准 API 响应包装。
-#[derive(Serialize)]
-struct ApiResponse<T> {
-    success: bool,
-    data: T,
 }
 
 #[tokio::main]
@@ -123,15 +113,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     // 6. 定义路由。
-    let app = Router::new()
-        .route("/", get(|| async { "TurtleShare API is running!" }))
-        .route("/api/health", get(health_check))
-        .route("/api/public/site-info", get({
-            let site_info = config.site_info.clone();
-            move || async { Json(ApiResponse { success: true, data: site_info }) }
-        }))
-        // Share db pool with handlers if needed, e.g.: .with_state(pool)
-        ;
+    let app = create_router(config.site_info.clone(), config.storage.clone());
 
     // 7. 启动服务器。
     let addr = format!("{}:{}", config.server.host, config.server.port)
@@ -143,14 +125,4 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     axum::serve(listener, app).await?;
 
     Ok(())
-}
-
-/// Simple health check endpoint.
-//
-// // 简单的健康检查端点。
-async fn health_check() -> Json<ApiResponse<serde_json::Value>> {
-    Json(ApiResponse {
-        success: true,
-        data: serde_json::json!({ "status": "ok" }),
-    })
 }

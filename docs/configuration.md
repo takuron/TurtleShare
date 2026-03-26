@@ -16,6 +16,7 @@ base_url = "https://example.com"  # Base URL for the site / 网站基础 URL
 path = "./data/turtleshare.db"
 
 [storage]
+static_path = "./static"  # Static files directory (frontend) / 静态文件目录（前端）
 files_path = "./data/files"
 max_upload_size_mb = 1024  # Maximum upload file size in MB / 最大上传文件大小（MB）
 
@@ -52,6 +53,7 @@ pub struct ServerConfig {
 pub struct StorageConfig {
     pub files_path: String,
     pub max_upload_size_mb: u64,
+    pub static_path: String,  // Defaults to "./static"
 }
 
 pub struct SiteInfoConfig {

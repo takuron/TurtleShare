@@ -11,6 +11,7 @@ base_url = "http://127.0.0.1:3000"
 path = "./tts_data/database.db"
 
 [storage]
+static_path = "./static"
 files_path = "./tts_data/files"
 max_upload_size_mb = 1024
 
