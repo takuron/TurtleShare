@@ -1,3 +1,5 @@
+pub mod schema;
+
 use crate::error::{AppError, Result};
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
@@ -65,55 +67,7 @@ pub async fn init_db(db_path: &str, require_existing: bool) -> Result<SqlitePool
         .map_err(|e| AppError::Database(format!("Failed to connect to database: {}", e)))?;
 
     // 5. 执行初始化迁移。
-    let schema = r#"
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    email TEXT,
-    note TEXT,
-    created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS user_subscriptions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    tier INTEGER NOT NULL,
-    start_date TEXT NOT NULL,
-    end_date TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS articles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    cover_image TEXT,
-    content TEXT NOT NULL,
-    required_tier INTEGER NOT NULL DEFAULT 0,
-    is_public INTEGER NOT NULL DEFAULT 0,
-    file_links TEXT,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS files (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid TEXT UNIQUE NOT NULL,
-    original_name TEXT NOT NULL,
-    file_size INTEGER NOT NULL,
-    created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS kv_store (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-);
-"#;
-
-    sqlx::query(schema)
+    sqlx::query(schema::SCHEMA)
         .execute(&pool)
         .await
         .map_err(|e| AppError::Database(format!("Failed to execute schema migrations: {}", e)))?;

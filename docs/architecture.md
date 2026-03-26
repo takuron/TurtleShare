@@ -54,36 +54,6 @@ TurtleShare uses the `thiserror` crate for internal error definitions and `axum`
 }
 ```
 
-## 5. Project Structure / 项目结构
-
-```
-src/
-├── main.rs              # Entry point / 入口
-├── config.rs            # TOML configuration / 配置读取
-├── models/              # Data models / 数据模型
-│   ├── mod.rs
-│   ├── admin.rs         # Admin model / 管理员模型
-│   ├── user.rs          # User model / 用户模型
-│   ├── article.rs       # Article model / 文章模型
-│   └── subscription.rs  # Subscription model / 订阅模型
-├── db/                  # Database layer / 数据库层
-│   ├── mod.rs
-│   └── schema.sql       # Database schema / 数据库模式
-├── handlers/            # HTTP handlers / HTTP 处理器
-│   ├── mod.rs
-│   ├── admin.rs         # Admin endpoints / 管理员端点
-│   ├── user.rs          # User endpoints / 用户端点
-│   ├── article.rs       # Article endpoints / 文章端点
-│   └── file.rs          # File endpoints / 文件端点
-├── middleware/          # Middleware / 中间件
-│   ├── mod.rs
-│   └── auth.rs          # Authentication / 鉴权
-└── utils/               # Utilities / 工具函数
-    ├── mod.rs
-    ├── jwt.rs           # JWT utilities / JWT 工具
-    └── file.rs          # File utilities / 文件工具
-```
-
 ## 4. Documentation / 文档
 
 - [Configuration / 配置文件](./configuration.md)

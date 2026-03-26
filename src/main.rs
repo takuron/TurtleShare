@@ -2,6 +2,9 @@ mod config;
 mod db;
 mod utils;
 mod error;
+mod models;
+mod handlers;
+mod middleware;
 
 use crate::config::Config;
 use crate::utils::hash;
