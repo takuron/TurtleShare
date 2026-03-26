@@ -7,10 +7,11 @@ mod handlers;
 mod middleware;
 
 use crate::config::Config;
-use crate::utils::hash;
+use crate::utils::{hash, jwt::JwtManager};
 use axum::{routing::get, Json, Router};
 use clap::{Parser, Subcommand};
 use std::net::SocketAddr;
+use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use serde::Serialize;
 
@@ -86,11 +87,36 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let config = Config::load(&args.config)?;
     tracing::info!("Successfully loaded configuration for: {}", config.site_info.name);
 
-    // 5. 初始化数据库连接。
+    // 5.1. 初始化数据库连接。
     let pool = db::init_db(&config.database.path, args.require_existing_db).await?;
     tracing::info!("Database initialized successfully.");
 
-    // 5.5. 确保存储目录存在。
+    // 5.2. 初始化JWT管理器。
+    let jwt_manager = Arc::new(
+        JwtManager::new(
+            pool.clone(),
+            config.jwt.secret.clone(),
+            config.jwt.expiry_hours,
+            config.jwt.rotation_days,
+        ).await?
+    );
+    tracing::info!("JWT manager initialized successfully.");
+
+    // 5.3. 启动JWT密钥轮换后台任务。
+    {
+        let jwt_manager = jwt_manager.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(86400)); // 每天检查一次
+            loop {
+                interval.tick().await;
+                if let Err(e) = jwt_manager.check_and_rotate().await {
+                    tracing::error!("JWT rotation check failed: {}", e);
+                }
+            }
+        });
+    }
+
+    // 5.4. 确保存储目录存在。
     if !std::path::Path::new(&config.storage.files_path).exists() {
         std::fs::create_dir_all(&config.storage.files_path)?;
         tracing::info!("Created storage directory at: {}", config.storage.files_path);

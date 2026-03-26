@@ -21,3 +21,5 @@
 [2026-03-26T18:14:54+08:00] Restructured project to match designed architecture: created models/, handlers/, middleware/ modules with placeholder files for unimplemented features. Updated project-structure.md with implementation status markers (✅/⏳).
 [2026-03-26T18:15:08+08:00] Restructured project to match designed architecture: created models, handlers, middleware modules. Updated project-structure.md with implementation status.
 [2026-03-26T18:16:12+08:00] Reorganized db module into db/ directory with separate schema.rs file following the designed architecture.
+[2026-03-26T18:26:51+08:00] Implemented JWT utilities with key rotation support - generate/verify tokens, SHA256-based secret derivation, automatic rotation based on config
+[2026-03-26T18:51:42+08:00] Integrated JWT manager into server initialization with automatic daily rotation check background task
