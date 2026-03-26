@@ -62,7 +62,39 @@ To ensure consistency and maintainability when using an LLM for development, the
     pub fn create_vault(...) -> Result<Vault, CreateError> { ... }
     ```
 
+### 1.5. Documentation Reading and Updates
+*   **Rule:** Before implementing any feature or making changes, you **must** read the relevant documentation in the `docs/` folder.
+*   **Rule:** Any code changes that affect functionality described in documentation **must** be accompanied by corresponding updates to the relevant files in `docs/`.
+*   **Goal:** Keep documentation and code in sync at all times.
+
+### 1.6. API Documentation
+*   **Rule:** After implementing any API endpoint, you **must** add complete documentation for that endpoint in `docs/api.md`.
+*   **Required Information:** Request method, path, parameters, request body format, response format, authentication requirements, and example responses.
+*   **Goal:** Maintain comprehensive and up-to-date API documentation.
+
+### 1.7. Task Completion Tracking
+*   **Rule:** After implementing any feature, you **must** mark the corresponding task(s) as completed in `docs/TODO.md` by changing `- [ ]` to `- [x]`.
+*   **Goal:** Keep the TODO list accurate and reflect current implementation status.
+
 
 ## 2. Project Structure
 
-No details available; to be supplemented and refined.
+### Documentation / 文档结构
+- `docs/architecture.md` - Core architecture overview / 核心架构概述
+- `docs/configuration.md` - Configuration file details / 配置文件详情
+- `docs/api.md` - API endpoints and responses / API 端点和响应
+- `docs/database.md` - Database schema / 数据库模式
+
+### Configuration / 配置
+See `docs/configuration.md` for complete configuration details.
+
+Key configuration sections:
+- `[server]` - Server settings including `base_url`
+- `[storage]` - File storage settings including `max_upload_size_mb` (default: 1024MB)
+- `[site_info]` - Site information (name, author, sponsor_link, header_image)
+
+### API Endpoints / API 端点
+See `docs/api.md` for complete API documentation.
+
+New public endpoint:
+- `GET /api/public/site-info` - Returns site information for frontend display

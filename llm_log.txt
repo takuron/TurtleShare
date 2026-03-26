@@ -6,3 +6,6 @@
 [2026-03-25T21:28:57+08:00] Updated JWT rotation strategy: dual-key system with jwt_secret_current/previous/date in kv_store, verification tries both keys, assumes both secure
 [2026-03-25T21:36:19+08:00] Changed JWT secret generation to SHA256(config.jwt.secret + random_uuid) for enhanced security, prevents initial secret leakage
 [2026-03-25T21:39:18+08:00] Added user password change API endpoint (PUT /api/users/password) with current password verification
+[2026-03-26T15:52:04+08:00] Updated configuration documentation: added base_url, max_upload_size_mb, and site_info section (name, author, sponsor_link, header_image). Created separate docs files (configuration.md, api.md, database.md). Added GET /api/public/site-info endpoint for frontend to retrieve site information.
+[2026-03-26T15:59:23+08:00] Added JWT authentication flow and access control to api.md. Created project-structure.md for file organization. Created TODO.md with complete implementation task checklist covering all 4 phases (Foundation, Admin Features, User Features, Polish).
+[2026-03-26T16:04:27+08:00] Updated llm_readme.md: Added sections 1.5 (Documentation Reading and Updates), 1.6 (API Documentation), and 1.7 (Task Completion Tracking) to enforce documentation synchronization, API documentation requirements, and TODO tracking.
