@@ -3,11 +3,11 @@
 ## Phase 1: Foundation / 基础阶段
 
 ### Configuration / 配置
-- [ ] Implement config.rs to load TOML configuration
-- [ ] Add ServerConfig with base_url field
-- [ ] Add StorageConfig with max_upload_size_mb field
-- [ ] Add SiteInfoConfig struct (name, author, sponsor_link, header_image)
-- [ ] Validate configuration on startup
+- [x] Implement config.rs to load TOML configuration
+- [x] Add ServerConfig with base_url field
+- [x] Add StorageConfig with max_upload_size_mb field
+- [x] Add SiteInfoConfig struct (name, author, sponsor_link, header_image)
+- [x] Validate configuration on startup
 
 ### Database / 数据库
 - [ ] Create database initialization module
@@ -76,7 +76,7 @@
 ### Public Endpoints / 公开端点
 - [ ] Implement GET /api/public/articles (list public articles with title+cover+tier)
 - [ ] Implement GET /api/public/articles/:id (get public article, show content if tier=0)
-- [ ] Implement GET /api/public/site-info (return site configuration)
+- [x] Implement GET /api/public/site-info (return site configuration)
 - [ ] Implement GET /files/:uuid/:filename (serve files without auth)
 
 ## Phase 4: Polish / 完善
@@ -102,7 +102,7 @@
 - [ ] Add rate limiting (recommended for production)
 
 ### Logging / 日志
-- [ ] Add structured logging
+- [x] Add structured logging
 - [ ] Log authentication attempts
 - [ ] Log file operations
 - [ ] Log errors with context
@@ -113,4 +113,4 @@
 - [ ] Add search/filter for articles
 - [ ] Add article sorting options
 - [ ] Optimize database queries with indexes
-- [ ] Add health check endpoint
+- [x] Add health check endpoint

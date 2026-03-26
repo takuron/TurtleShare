@@ -1,0 +1,27 @@
+[admin]
+username = "admin"
+password_hash = "$argon2id$v=19$m=4096,t=3,p=1$..." # Placeholder
+
+[server]
+host = "127.0.0.1"
+port = 3000
+base_url = "http://127.0.0.1:3000"
+
+[database]
+path = "./data/turtleshare.db"
+
+[storage]
+files_path = "./data/files"
+max_upload_size_mb = 1024
+
+[jwt]
+secret = "your-secret-key-change-in-production"
+expiry_hours = 24
+rotation_days = 30
+
+[site_info]
+name = "TurtleShare"
+author = "Admin"
+sponsor_link = ""
+header_image = ""
+base_url = "http://127.0.0.1:3000"

@@ -39,6 +39,7 @@
 - `GET /api/articles/:id` - Get article detail / 获取文章详情
 
 ## Public Endpoints / 公开端点
+- `GET /api/health` - Health check / 健康检查
 - `GET /api/public/articles` - List public articles (title+cover+tier) / 列出公开文章（标题+头图+等级）
 - `GET /api/public/articles/:id` - Get public article detail / 获取公开文章详情（tier=0显示内容）
 - `GET /api/public/site-info` - Get site information / 获取网站信息
@@ -119,6 +120,11 @@
 ```
 
 ## Authentication Flow / 鉴权流程
+
+### Password Handling / 密码处理
+TurtleShare uses standard **Argon2id** for password hashing. Passwords should be sent as plain text over HTTPS; the server handles the secure hashing and storage.
+
+**Security Note:** Always transmit passwords over HTTPS.
 
 ### Admin Authentication / 管理员鉴权
 1. Admin sends credentials to `/api/admin/login`
