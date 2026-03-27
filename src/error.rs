@@ -29,6 +29,9 @@ pub enum AppError {
     #[error("Validation error: {0}")]
     ValidationError(String),
 
+    #[error("Too many requests: {0}")]
+    TooManyRequests(String),
+
     #[error("Hashing error: {0}")]
     Hash(String),
 
@@ -56,6 +59,7 @@ impl IntoResponse for AppError {
             AppError::Unauthorized(m) => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED", m),
             AppError::Forbidden(m) => (StatusCode::FORBIDDEN, "FORBIDDEN", m),
             AppError::ValidationError(m) => (StatusCode::BAD_REQUEST, "VALIDATION_ERROR", m),
+            AppError::TooManyRequests(m) => (StatusCode::TOO_MANY_REQUESTS, "TOO_MANY_REQUESTS", m),
             AppError::Hash(m) => (StatusCode::INTERNAL_SERVER_ERROR, "HASH_ERROR", m),
             AppError::Network(m) => (StatusCode::BAD_GATEWAY, "NETWORK_ERROR", m),
             AppError::Internal(m) => (StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", m),

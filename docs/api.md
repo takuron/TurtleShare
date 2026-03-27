@@ -9,6 +9,8 @@ Admin login endpoint. Validates credentials against config.toml and returns JWT 
 
 **Authentication / 鉴权:** None required / 无需鉴权
 
+**Rate Limiting / 限流:** 10 requests per 5 minutes per IP / 每个 IP 每 5 分钟最多 10 次请求
+
 **Request Body / 请求体:**
 ```json
 {
@@ -41,6 +43,17 @@ Admin login endpoint. Validates credentials against config.toml and returns JWT 
   "error": {
     "code": "UNAUTHORIZED",
     "message": "Invalid credentials"
+  }
+}
+```
+
+**Rate Limit Response / 限流响应:** `429 Too Many Requests`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "TOO_MANY_REQUESTS",
+    "message": "Rate limit exceeded"
   }
 }
 ```

@@ -22,17 +22,19 @@ src/
 │   ├── routes.rs        # Main router assembly / 主路由组装器 ✅
 │   ├── public.rs        # Public endpoints / 公开端点 ✅
 │   ├── static_files.rs  # Static file serving / 静态文件服务 ✅
-│   ├── admin.rs         # Admin endpoints / 管理员端点 ⏳
+│   ├── admin.rs         # Admin endpoints (login with rate limiting) / 管理员端点（含限流登录） ✅
 │   ├── user.rs          # User endpoints / 用户端点 ⏳
 │   ├── article.rs       # Article endpoints / 文章端点 ⏳
 │   └── file.rs          # File endpoints / 文件端点 ⏳
 ├── middleware/          # Middleware / 中间件
 │   ├── mod.rs           # ✅
-│   └── auth.rs          # Authentication / 鉴权 ⏳
+│   └── auth.rs          # Authentication (admin/user) / 鉴权（管理员/用户） ✅
 └── utils/               # Utilities / 工具函数
     ├── mod.rs           # ✅
     ├── hash.rs          # Password hashing (Argon2id) / 密码哈希 ✅
-    ├── jwt.rs           # JWT utilities / JWT 工具 ⏳
+    ├── jwt.rs           # JWT with key rotation / JWT（含密钥轮换） ✅
+    ├── rate_limiter.rs  # Sliding window rate limiter / 滑动窗口限流器 ✅
+    ├── hashid.rs        # HashID encoding / HashID 编码 ✅
     └── file.rs          # File utilities / 文件工具 ⏳
 ```
 

@@ -3,12 +3,14 @@ use axum::{
     http::StatusCode,
     Json,
     response::IntoResponse,
+    extract::ConnectInfo,
 };
 use axum::extract::rejection::JsonRejection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::net::SocketAddr;
 use crate::config::AdminConfig;
-use crate::utils::{hash, jwt::JwtManager};
+use crate::utils::{hash, jwt::JwtManager, rate_limiter::RateLimiter};
 use crate::error::AppError;
 use super::common::ApiResponse;
 
@@ -36,6 +38,7 @@ pub struct AdminLoginResponse {
 pub struct AdminState {
     pub admin_config: AdminConfig,
     pub jwt_manager: Arc<JwtManager>,
+    pub rate_limiter: RateLimiter,
 }
 
 /// Admin login handler.
@@ -47,22 +50,29 @@ pub struct AdminState {
 // // 根据配置验证凭据并返回 JWT 令牌。
 pub async fn admin_login(
     State(state): State<AdminState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     payload: Result<Json<AdminLoginRequest>, JsonRejection>,
 ) -> Result<impl IntoResponse, AppError> {
-    // 1. 处理 JSON 解析错误
+    // 1. 限流检查
+    let ip = addr.ip().to_string();
+    if !state.rate_limiter.check(&ip).await {
+        return Err(AppError::TooManyRequests("Rate limit exceeded".to_string()));
+    }
+
+    // 2. 处理 JSON 解析错误
     let Json(req) = payload.map_err(|_| AppError::ValidationError("Invalid JSON format".to_string()))?;
 
-    // 2. 验证用户名
+    // 3. 验证用户名
     if req.username != state.admin_config.username {
         return Err(AppError::Unauthorized("Invalid credentials".to_string()));
     }
 
-    // 3. 验证密码
+    // 4. 验证密码
     if !hash::verify_password(&req.password, &state.admin_config.password_hash)? {
         return Err(AppError::Unauthorized("Invalid credentials".to_string()));
     }
 
-    // 4. 生成 JWT 令牌（sub 固定为 "admin"）
+    // 5. 生成 JWT 令牌（sub 固定为 "admin"）
     let token = state.jwt_manager.generate_token("admin", &req.username, "admin").await?;
 
     Ok((
