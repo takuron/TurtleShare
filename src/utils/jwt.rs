@@ -17,6 +17,7 @@ use crate::error::{AppError, Result};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
+    pub name: String,
     pub role: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user_id: Option<i64>,
@@ -43,7 +44,7 @@ impl JwtManager {
     ///
     /// # Arguments
     /// * `pool` - Database connection pool
-    /// * `config_secret` - Secret from config.toml
+    /// * `base_secret` - Base secret from config.toml
     /// * `expiry_hours` - Token expiry time in hours
     /// * `rotation_days` - Days before rotating secrets
     //
@@ -51,13 +52,13 @@ impl JwtManager {
     // //
     // // # 参数
     // // * `pool` - 数据库连接池
-    // // * `config_secret` - 来自 config.toml 的密钥
+    // // * `base_secret` - 来自 config.toml 的基础密钥
     // // * `expiry_hours` - 令牌过期时间（小时）
     // // * `rotation_days` - 密钥轮换前的天数
-    pub async fn new(pool: SqlitePool, config_secret: String, expiry_hours: u64, rotation_days: u64) -> Result<Self> {
+    pub async fn new(pool: SqlitePool, base_secret: String, expiry_hours: u64, rotation_days: u64) -> Result<Self> {
         let manager = Self {
             pool,
-            config_secret,
+            config_secret: base_secret,
             expiry_hours,
             rotation_days,
         };
@@ -221,6 +222,7 @@ impl JwtManager {
     ///
     /// # Arguments
     /// * `username` - Username for the token
+    /// * `name` - Display name for the token
     /// * `role` - User role ("admin" or "user")
     /// * `user_id` - Optional user ID (None for admin)
     //
@@ -228,9 +230,10 @@ impl JwtManager {
     // //
     // // # 参数
     // // * `username` - 令牌的用户名
+    // // * `name` - 令牌的显示名称
     // // * `role` - 用户角色（"admin" 或 "user"）
     // // * `user_id` - 可选的用户 ID（管理员为 None）
-    pub async fn generate_token(&self, username: &str, role: &str, user_id: Option<i64>) -> Result<String> {
+    pub async fn generate_token(&self, username: &str, name: &str, role: &str, user_id: Option<i64>) -> Result<String> {
         // 1. 获取当前密钥
         let secret: (String,) = sqlx::query_as(
             "SELECT value FROM kv_store WHERE key = 'jwt_secret_current'"
@@ -245,6 +248,7 @@ impl JwtManager {
 
         let claims = Claims {
             sub: username.to_string(),
+            name: name.to_string(),
             role: role.to_string(),
             user_id,
             exp: exp.timestamp(),

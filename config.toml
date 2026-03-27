@@ -16,9 +16,12 @@ files_path = "./tts_data/files"
 max_upload_size_mb = 1024
 
 [jwt]
-secret = "your-secret-key-change-in-production"
+base_secret = "your-secret-key-change-in-production"
 expiry_hours = 24
 rotation_days = 30
+
+[hashid]
+min_length = 6
 
 [site_info]
 name = "TurtleShare"

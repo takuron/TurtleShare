@@ -21,9 +21,12 @@ files_path = "./data/files"
 max_upload_size_mb = 1024  # Maximum upload file size in MB / 最大上传文件大小（MB）
 
 [jwt]
-secret = "your-secret-key-change-in-production"
+base_secret = "your-secret-key-change-in-production"  # Base secret for generating rotating JWT secrets / 用于生成轮换 JWT 密钥的基础密钥
 expiry_hours = 24
 rotation_days = 30  # Auto-rotate JWT secret every N days
+
+[hashid]
+min_length = 6  # Minimum length of encoded user IDs / 编码用户 ID 的最小长度
 
 [site_info]
 name = "TurtleShare"  # Site name / 网站名称
@@ -41,6 +44,7 @@ pub struct Config {
     pub database: DatabaseConfig,
     pub storage: StorageConfig,
     pub jwt: JwtConfig,
+    pub hashid: HashIdConfig,
     pub site_info: SiteInfoConfig,
 }
 

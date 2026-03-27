@@ -26,3 +26,4 @@
 [2026-03-26T19:07:32+08:00] Refactored route definitions from main.rs to handlers/routes.rs module
 [2026-03-26T19:12:15+08:00] Refactored handlers module using Plan A: separated common types, public routes, and main router assembly
 [2026-03-26T19:19:51+08:00] Implemented static file serving: added tower-http dependency, created static_files.rs handler, configured routes for /files and frontend fallback
+[2026-03-27T09:25:58+08:00] 1. Modified JWT Claims to add 'name' field for quick username display in frontend. 2. Designed HashID system using harsh library to encode/decode auto-increment user IDs. 3. Renamed jwt.secret to jwt.base_secret to clarify it's the base for rotating secrets. 4. Added hashid configuration section with min_length parameter.

@@ -17,6 +17,7 @@ pub struct Config {
     pub database: DatabaseConfig,
     pub storage: StorageConfig,
     pub jwt: JwtConfig,
+    pub hashid: HashIdConfig,
     pub site_info: SiteInfoConfig,
 }
 
@@ -67,9 +68,22 @@ fn default_static_path() -> String {
 // // JWT 身份验证配置。
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JwtConfig {
-    pub secret: String,
+    pub base_secret: String,
     pub expiry_hours: u64,
     pub rotation_days: u64,
+}
+
+/// HashID configuration for encoding user IDs.
+//
+// // HashID 配置，用于编码用户 ID。
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct HashIdConfig {
+    #[serde(default = "default_hashid_min_length")]
+    pub min_length: usize,
+}
+
+fn default_hashid_min_length() -> usize {
+    6
 }
 
 /// Public site information.

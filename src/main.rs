@@ -85,7 +85,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let jwt_manager = Arc::new(
         JwtManager::new(
             pool.clone(),
-            config.jwt.secret.clone(),
+            config.jwt.base_secret.clone(),
             config.jwt.expiry_hours,
             config.jwt.rotation_days,
         ).await?

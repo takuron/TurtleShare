@@ -8,6 +8,7 @@ anyhow = "1.0.102"
 argon2 = { version = "0.6.0-rc.8", features = ["password-hash", "rand_core"] }
 axum = { version = "0.8.8", features = ["json", "macros", "tokio", "http1", "http2"] }
 base64 = "0.22.0"
+harsh = "0.2.2"
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.6.0", features = ["derive"] }
 jsonwebtoken = "10.3.0"
