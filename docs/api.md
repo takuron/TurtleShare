@@ -39,11 +39,71 @@
 - `GET /api/articles/:id` - Get article detail / 获取文章详情
 
 ## Public Endpoints / 公开端点
-- `GET /` - Root endpoint / 根端点
-- `GET /api/health` - Health check / 健康检查
-- `GET /api/public/articles` - List public articles (title+cover+tier) / 列出公开文章（标题+头图+等级）
-- `GET /api/public/articles/:id` - Get public article detail / 获取公开文章详情（tier=0显示内容）
-- `GET /api/public/site-info` - Get site information / 获取网站信息
+
+### GET /api
+Returns a simple text message indicating the API is running.
+
+返回一个简单的文本消息，表明API正在运行。
+
+**Response / 响应:** Plain text / 纯文本
+```
+TurtleShare API is running!
+```
+
+---
+
+### GET /api/health
+Health check endpoint for monitoring service availability.
+
+用于监控服务可用性的健康检查端点。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "status": "ok"
+  }
+}
+```
+
+---
+
+### GET /api/public/site-info
+Returns public site information configured in `config.toml`.
+
+返回在 `config.toml` 中配置的公开站点信息。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "name": "TurtleShare",
+    "author": "Admin",
+    "sponsor_link": "https://example.com/sponsor",
+    "header_image": "/files/uuid-456/header.jpg",
+    "base_url": "https://example.com"
+  }
+}
+```
+
+**Response Fields / 响应字段:**
+- `name` (string) - Site name from config / 来自配置的站点名称
+- `author` (string) - Site author from config / 来自配置的站点作者
+- `sponsor_link` (string|null) - Optional sponsor link / 可选的赞助链接
+- `header_image` (string|null) - Optional header image path / 可选的头图路径
+- `base_url` (string) - Site base URL / 站点基础URL
+
+---
+
+### Not Yet Implemented / 未实现
+- `GET /api/public/articles` - List public articles / 列出公开文章
+- `GET /api/public/articles/:id` - Get public article detail / 获取公开文章详情
 
 ## Static File Routes / 静态文件路由
 - `GET /files/*` - Serve uploaded files / 提供上传的文件
@@ -105,20 +165,6 @@
     "email": "user@example.com",
     "note": "VIP customer",
     "created_at": "2025-01-15T08:30:45.123+08:00"
-  }
-}
-```
-
-**Get Site Info**
-```json
-{
-  "success": true,
-  "data": {
-    "name": "TurtleShare",
-    "author": "Admin",
-    "sponsor_link": "https://example.com/sponsor",
-    "header_image": "/files/uuid-456/header.jpg",
-    "base_url": "https://example.com"
   }
 }
 ```
