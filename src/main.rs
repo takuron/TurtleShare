@@ -113,7 +113,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     // 6. 定义路由。
-    let app = create_router(config.site_info.clone(), config.storage.clone());
+    let app = create_router(config.clone(), jwt_manager.clone());
 
     // 7. 启动服务器。
     let addr = format!("{}:{}", config.server.host, config.server.port)

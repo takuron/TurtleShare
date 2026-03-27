@@ -2,8 +2,50 @@
 
 ## Admin Endpoints / 管理员端点
 
-**Authentication / 鉴权**
-- `POST /api/admin/login` - Admin login / 管理员登录
+### POST /api/admin/login
+Admin login endpoint. Validates credentials against config.toml and returns JWT token.
+
+管理员登录端点。根据 config.toml 验证凭据并返回 JWT 令牌。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Request Body / 请求体:**
+```json
+{
+  "username": "admin",
+  "password": "your_password"
+}
+```
+
+**Success Response / 成功响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+**JWT Claims / JWT 声明:**
+- `sub`: "admin" (fixed for admin) / "admin"（管理员固定值）
+- `name`: admin username from config / 来自配置的管理员用户名
+- `role`: "admin"
+- `exp`: expiration timestamp / 过期时间戳
+- `iat`: issued at timestamp / 签发时间戳
+
+**Error Response / 错误响应:** `401 Unauthorized`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid credentials"
+  }
+}
+```
+
+---
 
 **Users / 用户管理**
 - `GET /api/admin/users` - List all users / 列出所有用户
@@ -147,13 +189,13 @@ TurtleShare uses standard **Argon2id** for password hashing. Passwords should be
 ### Admin Authentication / 管理员鉴权
 1. Admin sends credentials to `/api/admin/login`
 2. Server validates against config.toml
-3. Returns JWT token with `role: admin`
+3. Returns JWT token with `sub: "admin", role: "admin"`
 4. Admin includes token in `Authorization: Bearer <token>` header
 
 ### User Authentication / 用户鉴权
 1. User sends credentials to `/api/users/login`
 2. Server validates against database
-3. Returns JWT token with `role: user, user_id: X`
+3. Returns JWT token with `sub: "user:<user_hashid>", role: "user"`
 4. User includes token in header for protected endpoints
 
 ### JWT Secret Rotation / JWT 密钥轮换

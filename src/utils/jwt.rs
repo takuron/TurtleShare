@@ -10,17 +10,19 @@ use crate::error::{AppError, Result};
 /// JWT claims structure.
 ///
 /// Contains user identity and role information.
+/// For admin: sub = "admin"
+/// For users: sub = "user:<user_hashid>"
 //
 // // JWT 声明结构。
 // //
 // // 包含用户身份和角色信息。
+// // 管理员：sub = "admin"
+// // 用户：sub = "user:<用户HashID>"
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
     pub name: String,
     pub role: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub user_id: Option<i64>,
     pub exp: i64,
     pub iat: i64,
 }
@@ -218,22 +220,20 @@ impl JwtManager {
         Ok(())
     }
 
-    /// Generates a JWT token for a user.
+    /// Generates a JWT token.
     ///
     /// # Arguments
-    /// * `username` - Username for the token
+    /// * `sub` - Subject ("admin" or "user:<user_hashid>")
     /// * `name` - Display name for the token
     /// * `role` - User role ("admin" or "user")
-    /// * `user_id` - Optional user ID (None for admin)
     //
-    // // 为用户生成 JWT 令牌。
+    // // 生成 JWT 令牌。
     // //
     // // # 参数
-    // // * `username` - 令牌的用户名
+    // // * `sub` - 主题（"admin" 或 "user:<用户HashID>"）
     // // * `name` - 令牌的显示名称
     // // * `role` - 用户角色（"admin" 或 "user"）
-    // // * `user_id` - 可选的用户 ID（管理员为 None）
-    pub async fn generate_token(&self, username: &str, name: &str, role: &str, user_id: Option<i64>) -> Result<String> {
+    pub async fn generate_token(&self, sub: &str, name: &str, role: &str) -> Result<String> {
         // 1. 获取当前密钥
         let secret: (String,) = sqlx::query_as(
             "SELECT value FROM kv_store WHERE key = 'jwt_secret_current'"
@@ -247,10 +247,9 @@ impl JwtManager {
         let exp = now + Duration::hours(self.expiry_hours as i64);
 
         let claims = Claims {
-            sub: username.to_string(),
+            sub: sub.to_string(),
             name: name.to_string(),
             role: role.to_string(),
-            user_id,
             exp: exp.timestamp(),
             iat: now.timestamp(),
         };

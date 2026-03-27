@@ -30,3 +30,5 @@
 [2026-03-27T09:34:23+08:00] Added detailed API documentation for implemented endpoints: GET /api, GET /api/health, and GET /api/public/site-info with bilingual descriptions, authentication requirements, and response examples.
 [2026-03-27T09:38:30+08:00] Updated llm_readme.md API documentation rules: added requirement for bilingual (English/Chinese) API docs and mandate to reference docs/api.md before implementing/modifying endpoints.
 [2026-03-27T09:41:42+08:00] Updated .cursorrules to match current project: changed project name to TurtleShare, updated file references (llm_readme.txt -> llm_readme.md), added rules for docs/ folder updates, API documentation requirements, and TODO.md task tracking.
+[2026-03-27T09:50:27+08:00] 实现管理员登录鉴权：修改JWT Claims移除user_id字段，管理员sub固定为'admin'，用户sub为user_id字符串；实现admin_login处理器验证config.toml凭据；实现require_admin和require_user中间件；更新路由集成admin登录端点；更新API文档
+[2026-03-27T09:53:02+08:00] 修改用户JWT sub格式为'user:<用户HashID>'，更新相关文档和注释

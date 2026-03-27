@@ -25,10 +25,10 @@
 ## Phase 2: Admin Features / 管理员功能
 
 ### Admin Authentication / 管理员认证
-- [ ] Implement POST /api/admin/login endpoint
-- [ ] Validate credentials against config.toml
-- [ ] Return JWT token with role: admin
-- [ ] Add admin authentication middleware
+- [x] Implement POST /api/admin/login endpoint
+- [x] Validate credentials against config.toml
+- [x] Return JWT token with role: admin
+- [x] Add admin authentication middleware
 
 ### User Management / 用户管理
 - [ ] Implement GET /api/admin/users (list all users)
