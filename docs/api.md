@@ -101,7 +101,6 @@ Returns public site information configured in `config.toml`.
 
 ---
 
-### Not Yet Implemented / 未实现
 - `GET /api/public/articles` - List public articles / 列出公开文章
 - `GET /api/public/articles/:id` - Get public article detail / 获取公开文章详情
 
@@ -137,37 +136,6 @@ Returns public site information configured in `config.toml`.
 - `NOT_FOUND` - 404, resource not found
 - `VALIDATION_ERROR` - 400, invalid input
 - `INTERNAL_ERROR` - 500, server error
-
-## Response Examples / 响应示例
-
-**Login Success**
-```json
-{
-  "success": true,
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": 1,
-      "username": "admin",
-      "role": "admin"
-    }
-  }
-}
-```
-
-**Get User Detail (Admin)**
-```json
-{
-  "success": true,
-  "data": {
-    "id": 5,
-    "username": "user123",
-    "email": "user@example.com",
-    "note": "VIP customer",
-    "created_at": "2025-01-15T08:30:45.123+08:00"
-  }
-}
-```
 
 ## Authentication Flow / 鉴权流程
 
