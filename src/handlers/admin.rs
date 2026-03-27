@@ -4,6 +4,7 @@ use axum::{
     Json,
     response::IntoResponse,
 };
+use axum::extract::rejection::JsonRejection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use crate::config::AdminConfig;
@@ -46,19 +47,22 @@ pub struct AdminState {
 // // 根据配置验证凭据并返回 JWT 令牌。
 pub async fn admin_login(
     State(state): State<AdminState>,
-    Json(req): Json<AdminLoginRequest>,
+    payload: Result<Json<AdminLoginRequest>, JsonRejection>,
 ) -> Result<impl IntoResponse, AppError> {
-    // 1. 验证用户名
+    // 1. 处理 JSON 解析错误
+    let Json(req) = payload.map_err(|_| AppError::ValidationError("Invalid JSON format".to_string()))?;
+
+    // 2. 验证用户名
     if req.username != state.admin_config.username {
         return Err(AppError::Unauthorized("Invalid credentials".to_string()));
     }
 
-    // 2. 验证密码
+    // 3. 验证密码
     if !hash::verify_password(&req.password, &state.admin_config.password_hash)? {
         return Err(AppError::Unauthorized("Invalid credentials".to_string()));
     }
 
-    // 3. 生成 JWT 令牌（sub 固定为 "admin"）
+    // 4. 生成 JWT 令牌（sub 固定为 "admin"）
     let token = state.jwt_manager.generate_token("admin", &req.username, "admin").await?;
 
     Ok((

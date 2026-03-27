@@ -23,6 +23,12 @@ pub enum AppError {
     #[error("Unauthorized: {0}")]
     Unauthorized(String),
 
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
+
+    #[error("Validation error: {0}")]
+    ValidationError(String),
+
     #[error("Hashing error: {0}")]
     Hash(String),
 
@@ -48,6 +54,8 @@ impl IntoResponse for AppError {
             AppError::Database(m) => (StatusCode::INTERNAL_SERVER_ERROR, "DATABASE_ERROR", m),
             AppError::Auth(m) => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED", m),
             AppError::Unauthorized(m) => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED", m),
+            AppError::Forbidden(m) => (StatusCode::FORBIDDEN, "FORBIDDEN", m),
+            AppError::ValidationError(m) => (StatusCode::BAD_REQUEST, "VALIDATION_ERROR", m),
             AppError::Hash(m) => (StatusCode::INTERNAL_SERVER_ERROR, "HASH_ERROR", m),
             AppError::Network(m) => (StatusCode::BAD_GATEWAY, "NETWORK_ERROR", m),
             AppError::Internal(m) => (StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", m),

@@ -18,7 +18,7 @@ use crate::error::{AppError, Result};
 // // 包含用户身份和角色信息。
 // // 管理员：sub = "admin"
 // // 用户：sub = "user:<用户HashID>"
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
     pub name: String,

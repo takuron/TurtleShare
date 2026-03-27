@@ -1,6 +1,6 @@
 [admin]
 username = "admin"
-password_hash = "$argon2id$v=19$m=4096,t=3,p=1$..." # Placeholder
+password_hash = "$argon2id$v=19$m=19456,t=2,p=1$FVGhfDUHIQpSCUabKbhkVA$e0tpWtkmWL7uKmX2t517HOAHpUuBbmIpluFwDv522Ns" # admin123
 
 [server]
 host = "127.0.0.1"
