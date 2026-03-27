@@ -70,6 +70,8 @@ To ensure consistency and maintainability when using an LLM for development, the
 ### 1.6. API Documentation
 *   **Rule:** After implementing any API endpoint, you **must** add complete documentation for that endpoint in `docs/api.md`.
 *   **Required Information:** Request method, path, parameters, request body format, response format, authentication requirements, and example responses.
+*   **Language:** All API documentation must be bilingual (English and Chinese).
+*   **Rule:** Before implementing or modifying any API endpoint, you **must** reference `docs/api.md` to understand existing API patterns and conventions.
 *   **Goal:** Maintain comprehensive and up-to-date API documentation.
 
 ### 1.7. Task Completion Tracking
