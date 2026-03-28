@@ -7,7 +7,7 @@ mod handlers;
 mod middleware;
 
 use crate::config::Config;
-use crate::utils::{hash, jwt::JwtManager};
+use crate::utils::{hash, jwt::JwtManager, hashid::HashIdManager};
 use crate::handlers::create_router;
 use clap::{Parser, Subcommand};
 use std::net::SocketAddr;
@@ -92,7 +92,13 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     );
     tracing::info!("JWT manager initialized successfully.");
 
-    // 5.3. 启动JWT密钥轮换后台任务。
+    // 5.3. 初始化HashID管理器。
+    let hashid_manager = Arc::new(
+        HashIdManager::new(&config.jwt.base_secret, config.hashid.min_length)?
+    );
+    tracing::info!("HashID manager initialized successfully.");
+
+    // 5.4. 启动JWT密钥轮换后台任务。
     {
         let jwt_manager = jwt_manager.clone();
         tokio::spawn(async move {
@@ -106,14 +112,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         });
     }
 
-    // 5.4. 确保存储目录存在。
+    // 5.5. 确保存储目录存在。
     if !std::path::Path::new(&config.storage.files_path).exists() {
         std::fs::create_dir_all(&config.storage.files_path)?;
         tracing::info!("Created storage directory at: {}", config.storage.files_path);
     }
 
     // 6. 定义路由。
-    let app = create_router(config.clone(), jwt_manager.clone(), pool.clone())
+    let app = create_router(config.clone(), jwt_manager.clone(), hashid_manager.clone(), pool.clone())
         .into_make_service_with_connect_info::<SocketAddr>();
 
     // 7. 启动服务器。

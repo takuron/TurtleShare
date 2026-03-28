@@ -62,6 +62,8 @@ Admin login endpoint. Validates credentials against config.toml and returns JWT 
 
 **Users / 用户管理**
 
+**Note / 注意:** All user IDs in API responses are hash IDs (encoded strings) for security. Numeric IDs are never exposed. / 所有 API 响应中的用户 ID 都是哈希 ID（编码字符串）以保护安全。数字 ID 永远不会暴露。
+
 ### GET /api/admin/users
 List all registered users. Password hashes are excluded from the response.
 
@@ -75,7 +77,7 @@ List all registered users. Password hashes are excluded from the response.
   "success": true,
   "data": [
     {
-      "id": 1,
+      "hash_id": "jR3kLm",
       "username": "user1",
       "email": "user1@example.com",
       "note": "A test user",
@@ -87,19 +89,22 @@ List all registered users. Password hashes are excluded from the response.
 
 **Note / 注意:** All timestamp fields are Unix timestamps (seconds since epoch) / 所有时间戳字段均为 Unix 时间戳（自纪元以来的秒数）
 
-### GET /api/admin/users/:id
+### GET /api/admin/users/:hash_id
 Get detail for a specific user.
 
 获取特定用户的详情。
 
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
 
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - User hash ID / 用户哈希 ID
+
 **Response / 响应:** `200 OK`
 ```json
 {
   "success": true,
   "data": {
-    "id": 1,
+    "hash_id": "jR3kLm",
     "username": "user1",
     "email": "user1@example.com",
     "note": "A test user",
@@ -108,12 +113,15 @@ Get detail for a specific user.
 }
 ```
 
-### GET /api/admin/users/:id/tier?at=<timestamp>
+### GET /api/admin/users/:hash_id/tier?at=<timestamp>
 Get a user's subscription tier at a specific time. If `at` is omitted, defaults to the current time.
 
 查询特定时间某个用户的订阅等级。如果省略 `at`，则默认为当前时间。
 
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - User hash ID / 用户哈希 ID
 
 **Query Parameters / 查询参数:**
 - `at` (integer, optional) - Unix timestamp (e.g., `1710928800`)
@@ -150,7 +158,7 @@ Create a new user.
 {
   "success": true,
   "data": {
-    "id": 2,
+    "hash_id": "pL9mNq",
     "username": "new_user",
     "email": "new@example.com",
     "note": "Optional note",
@@ -159,12 +167,15 @@ Create a new user.
 }
 ```
 
-### PUT /api/admin/users/:id
+### PUT /api/admin/users/:hash_id
 Update an existing user. Only the provided fields are updated.
 
 更新现有用户。仅更新提供的字段。
 
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - User hash ID / 用户哈希 ID
 
 **Request Body / 请求体:** (All fields optional / 所有字段可选)
 ```json
@@ -181,7 +192,7 @@ Update an existing user. Only the provided fields are updated.
 {
   "success": true,
   "data": {
-    "id": 2,
+    "hash_id": "pL9mNq",
     "username": "updated_user",
     "email": "updated@example.com",
     "note": "Updated note",
@@ -190,12 +201,15 @@ Update an existing user. Only the provided fields are updated.
 }
 ```
 
-### DELETE /api/admin/users/:id
+### DELETE /api/admin/users/:hash_id
 Delete a user and all their associated data (subscriptions).
 
 删除用户及其所有关联数据（订阅）。
 
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - User hash ID / 用户哈希 ID
 
 **Response / 响应:** `200 OK`
 ```json
@@ -208,8 +222,8 @@ Delete a user and all their associated data (subscriptions).
 ```
 
 **User Subscriptions / 用户订阅管理**
-- `GET /api/admin/users/:id/subscriptions` - List user subscriptions / 列出用户订阅
-- `POST /api/admin/users/:id/subscriptions` - Add subscription period / 添加订阅时段
+- `GET /api/admin/users/:hash_id/subscriptions` - List user subscriptions / 列出用户订阅
+- `POST /api/admin/users/:hash_id/subscriptions` - Add subscription period / 添加订阅时段
 - `PUT /api/admin/subscriptions/:id` - Update subscription / 更新订阅
 - `DELETE /api/admin/subscriptions/:id` - Delete subscription / 删除订阅
 

@@ -12,9 +12,9 @@ use std::sync::Arc;
 use std::net::SocketAddr;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::config::AdminConfig;
-use crate::utils::{hash, jwt::JwtManager, rate_limiter::RateLimiter};
+use crate::utils::{hash, jwt::JwtManager, hashid::HashIdManager, rate_limiter::RateLimiter};
 use crate::error::AppError;
-use crate::models::user::{User, CreateUserRequest, UpdateUserRequest};
+use crate::models::user::{User, UserResponse, CreateUserRequest, UpdateUserRequest};
 use super::common::ApiResponse;
 
 /// Admin login request.
@@ -41,6 +41,7 @@ pub struct AdminLoginResponse {
 pub struct AdminState {
     pub admin_config: AdminConfig,
     pub jwt_manager: Arc<JwtManager>,
+    pub hashid_manager: Arc<HashIdManager>,
     pub rate_limiter: RateLimiter,
     pub pool: SqlitePool,
 }
@@ -105,23 +106,31 @@ pub async fn list_users(
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
 
+    // 转换为带有 hash_id 的响应
+    let user_responses: Vec<UserResponse> = users.iter()
+        .map(|u| u.to_response(state.hashid_manager.encode(u.id).unwrap_or_default()))
+        .collect();
+
     Ok(Json(ApiResponse {
         success: true,
-        data: users,
+        data: user_responses,
     }))
 }
 
 /// Get user detail.
 ///
-/// Retrieves a single user by ID.
+/// Retrieves a single user by hash_id.
 //
 // // 获取用户详情。
 // //
-// // 通过 ID 检索单个用户。
+// // 通过 hash_id 检索单个用户。
 pub async fn get_user(
     State(state): State<AdminState>,
-    Path(id): Path<i64>,
+    Path(hash_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
+    // 解码 hash_id 为数字 ID
+    let id = state.hashid_manager.decode(&hash_id)?;
+
     let user = sqlx::query_as::<_, User>(
         "SELECT id, username, password_hash, email, note, created_at FROM users WHERE id = ?"
     )
@@ -133,7 +142,7 @@ pub async fn get_user(
 
     Ok(Json(ApiResponse {
         success: true,
-        data: user,
+        data: user.to_response(hash_id),
     }))
 }
 
@@ -179,11 +188,13 @@ pub async fn create_user(
         created_at,
     };
 
+    let hash_id = state.hashid_manager.encode(id)?;
+
     Ok((
         StatusCode::CREATED,
         Json(ApiResponse {
             success: true,
-            data: user,
+            data: user.to_response(hash_id),
         }),
     ))
 }
@@ -197,9 +208,12 @@ pub async fn create_user(
 // // 更新现有用户的信息。
 pub async fn update_user(
     State(state): State<AdminState>,
-    Path(id): Path<i64>,
+    Path(hash_id): Path<String>,
     Json(req): Json<UpdateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
+    // 解码 hash_id 为数字 ID
+    let id = state.hashid_manager.decode(&hash_id)?;
+
     let mut user = sqlx::query_as::<_, User>(
         "SELECT id, username, password_hash, email, note, created_at FROM users WHERE id = ?"
     )
@@ -244,7 +258,7 @@ pub async fn update_user(
 
     Ok(Json(ApiResponse {
         success: true,
-        data: user,
+        data: user.to_response(hash_id),
     }))
 }
 
@@ -257,8 +271,11 @@ pub async fn update_user(
 // // 从数据库中移除用户。
 pub async fn delete_user(
     State(state): State<AdminState>,
-    Path(id): Path<i64>,
+    Path(hash_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
+    // 解码 hash_id 为数字 ID
+    let id = state.hashid_manager.decode(&hash_id)?;
+
     let rows_affected = sqlx::query("DELETE FROM users WHERE id = ?")
         .bind(id)
         .execute(&state.pool)
@@ -301,9 +318,12 @@ pub struct TierResponse {
 // // 查询用户在特定时间的订阅等级。
 pub async fn get_user_tier(
     State(state): State<AdminState>,
-    Path(id): Path<i64>,
+    Path(hash_id): Path<String>,
     Query(query): Query<TierQuery>,
 ) -> Result<impl IntoResponse, AppError> {
+    // 解码 hash_id 为数字 ID
+    let id = state.hashid_manager.decode(&hash_id)?;
+
     let at = query.at.unwrap_or_else(|| SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64);
 
     let result: Option<(i64,)> = sqlx::query_as(
