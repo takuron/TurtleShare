@@ -37,3 +37,5 @@
 [2026-03-28T16:30:07+08:00] Updated docs/api.md with detailed descriptions for admin user management endpoints.
 [2026-03-28T16:56:57+08:00] 将时间格式从RFC3339字符串迁移到Unix时间戳。更新了所有模型、JWT管理器、管理员处理器和文档。创建了数据库迁移脚本migrate_to_unix_timestamps.py。
 [2026-03-28T17:38:32+08:00] 将所有用户管理API的ID从数字改为hashID以保护用户隐私
+[2026-03-28T18:31:13+08:00] 实现黑箱集成测试框架：添加 tests/common/mod.rs（TestServer 自动启动/清理、随机端口、临时数据库、HTTP 客户端封装），添加 tests/health_check.rs 作为示例（4个测试覆盖 /api/health、/api、/api/public/site-info、404）
+[2026-03-28T18:44:19+08:00] 添加管理员身份验证测试(admin_auth.rs, 16个)和用户管理API测试(admin_users.rs, 23个)，覆盖正常流程、错误凭据、恶意请求(SQL注入/XSS/路径遍历/超长输入)、未认证访问等场景

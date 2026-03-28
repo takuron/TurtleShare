@@ -43,6 +43,9 @@ pub enum AppError {
 
     #[error("Resource not found: {0}")]
     NotFound(String),
+
+    #[error("Invalid hash ID: {0}")]
+    InvalidHashId(String),
 }
 
 /// A specialized Result type for TurtleShare.
@@ -64,6 +67,7 @@ impl IntoResponse for AppError {
             AppError::Network(m) => (StatusCode::BAD_GATEWAY, "NETWORK_ERROR", m),
             AppError::Internal(m) => (StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", m),
             AppError::NotFound(m) => (StatusCode::NOT_FOUND, "NOT_FOUND", m),
+            AppError::InvalidHashId(m) => (StatusCode::BAD_REQUEST, "INVALID_HASH_ID", m),
         };
 
         let body = Json(json!({

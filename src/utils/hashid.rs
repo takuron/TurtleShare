@@ -74,10 +74,10 @@ impl HashIdManager {
     // // 返回解码的数字 ID。
     pub fn decode(&self, hash: &str) -> Result<i64> {
         let decoded = self.harsh.decode(hash)
-            .map_err(|_| AppError::Internal("Invalid hash ID".to_string()))?;
+            .map_err(|_| AppError::InvalidHashId(format!("Invalid hash ID: {}", hash)))?;
 
         if decoded.is_empty() {
-            return Err(AppError::Internal("Invalid hash ID".to_string()));
+            return Err(AppError::InvalidHashId(format!("Invalid hash ID: {}", hash)));
         }
 
         Ok(decoded[0] as i64)
