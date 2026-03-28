@@ -336,4 +336,3 @@ impl JwtManager {
         Ok(token_data.claims)
     }
 }
-

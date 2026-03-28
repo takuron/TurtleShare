@@ -31,12 +31,12 @@
 - [x] Add admin authentication middleware
 
 ### User Management / 用户管理
-- [ ] Implement GET /api/admin/users (list all users)
-- [ ] Implement GET /api/admin/users/:id (get user detail)
-- [ ] Implement GET /api/admin/users/:id/tier?at=<timestamp> (query tier at time)
-- [ ] Implement POST /api/admin/users (create user)
-- [ ] Implement PUT /api/admin/users/:id (update user)
-- [ ] Implement DELETE /api/admin/users/:id (delete user)
+- [x] Implement GET /api/admin/users (list all users)
+- [x] Implement GET /api/admin/users/:id (get user detail)
+- [x] Implement GET /api/admin/users/:id/tier?at=<timestamp> (query tier at time)
+- [x] Implement POST /api/admin/users (create user)
+- [x] Implement PUT /api/admin/users/:id (update user)
+- [x] Implement DELETE /api/admin/users/:id (delete user)
 
 ### User Subscriptions / 用户订阅管理
 - [ ] Implement GET /api/admin/users/:id/subscriptions (list user subscriptions)

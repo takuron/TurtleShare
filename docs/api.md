@@ -61,12 +61,149 @@ Admin login endpoint. Validates credentials against config.toml and returns JWT 
 ---
 
 **Users / 用户管理**
-- `GET /api/admin/users` - List all users / 列出所有用户
-- `GET /api/admin/users/:id` - Get user detail / 获取用户详情
-- `GET /api/admin/users/:id/tier?at=<timestamp>` - Get user tier at specific time / 查询特定时间用户等级
-- `POST /api/admin/users` - Create user / 创建用户
-- `PUT /api/admin/users/:id` - Update user / 更新用户
-- `DELETE /api/admin/users/:id` - Delete user / 删除用户
+
+### GET /api/admin/users
+List all registered users. Password hashes are excluded from the response.
+
+列出所有已注册用户。响应中不包含密码哈希。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "username": "user1",
+      "email": "user1@example.com",
+      "note": "A test user",
+      "created_at": "2024-03-20T10:00:00Z"
+    }
+  ]
+}
+```
+
+### GET /api/admin/users/:id
+Get detail for a specific user.
+
+获取特定用户的详情。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "username": "user1",
+    "email": "user1@example.com",
+    "note": "A test user",
+    "created_at": "2024-03-20T10:00:00Z"
+  }
+}
+```
+
+### GET /api/admin/users/:id/tier?at=<timestamp>
+Get a user's subscription tier at a specific time. If `at` is omitted, defaults to the current time.
+
+查询特定时间某个用户的订阅等级。如果省略 `at`，则默认为当前时间。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Query Parameters / 查询参数:**
+- `at` (string, optional) - RFC 3339 timestamp (e.g., `2024-03-20T10:00:00Z`)
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "tier": 2
+  }
+}
+```
+
+### POST /api/admin/users
+Create a new user. 
+
+创建新用户。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Request Body / 请求体:**
+```json
+{
+  "username": "new_user",
+  "password": "secure_password",
+  "email": "new@example.com",
+  "note": "Optional note"
+}
+```
+
+**Success Response / 成功响应:** `201 Created`
+```json
+{
+  "success": true,
+  "data": {
+    "id": 2,
+    "username": "new_user",
+    "email": "new@example.com",
+    "note": "Optional note",
+    "created_at": "2024-03-21T12:00:00Z"
+  }
+}
+```
+
+### PUT /api/admin/users/:id
+Update an existing user. Only the provided fields are updated.
+
+更新现有用户。仅更新提供的字段。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Request Body / 请求体:** (All fields optional / 所有字段可选)
+```json
+{
+  "username": "updated_user",
+  "password": "new_secure_password",
+  "email": "updated@example.com",
+  "note": "Updated note"
+}
+```
+
+**Success Response / 成功响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "id": 2,
+    "username": "updated_user",
+    "email": "updated@example.com",
+    "note": "Updated note",
+    "created_at": "2024-03-21T12:00:00Z"
+  }
+}
+```
+
+### DELETE /api/admin/users/:id
+Delete a user and all their associated data (subscriptions).
+
+删除用户及其所有关联数据（订阅）。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true
+  }
+}
+```
 
 **User Subscriptions / 用户订阅管理**
 - `GET /api/admin/users/:id/subscriptions` - List user subscriptions / 列出用户订阅
