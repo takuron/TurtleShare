@@ -22,8 +22,8 @@ pub fn create_router(config: Config, jwt_manager: Arc<JwtManager>, pool: sqlx::S
 
     let admin_protected = Router::new()
         .route("/users", get(admin::list_users).post(admin::create_user))
-        .route("/users/:id", get(admin::get_user).put(admin::update_user).delete(admin::delete_user))
-        .route("/users/:id/tier", get(admin::get_user_tier))
+        .route("/users/{id}", get(admin::get_user).put(admin::update_user).delete(admin::delete_user))
+        .route("/users/{id}/tier", get(admin::get_user_tier))
         .route_layer(axum::middleware::from_fn_with_state(
             jwt_manager.clone(),
             crate::middleware::auth::require_admin,

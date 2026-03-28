@@ -8,7 +8,7 @@ pub struct UserSubscription {
     pub id: i64,
     pub user_id: i64,
     pub tier: i32,
-    pub start_date: String,
-    pub end_date: String,
-    pub created_at: String,
+    pub start_date: i64,
+    pub end_date: i64,
+    pub created_at: i64,
 }

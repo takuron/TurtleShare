@@ -1,11 +1,11 @@
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation, Algorithm};
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc, Duration};
 use sqlx::SqlitePool;
 use sha2::{Sha256, Digest};
 use uuid::Uuid;
 use base64::Engine;
 use crate::error::{AppError, Result};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// JWT claims structure.
 ///
@@ -109,7 +109,7 @@ impl JwtManager {
     // // 首次初始化密钥。
     async fn initialize_secrets(&self) -> Result<()> {
         let secret = self.generate_secret();
-        let now = Utc::now().to_rfc3339();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
 
         // 1. 插入当前密钥
         sqlx::query(
@@ -117,8 +117,8 @@ impl JwtManager {
         )
         .bind("jwt_secret_current")
         .bind(&secret)
-        .bind(&now)
-        .bind(&now)
+        .bind(now)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -128,9 +128,9 @@ impl JwtManager {
             "INSERT INTO kv_store (key, value, created_at, updated_at) VALUES (?, ?, ?, ?)"
         )
         .bind("jwt_secret_date")
-        .bind(&now)
-        .bind(&now)
-        .bind(&now)
+        .bind(now.to_string())
+        .bind(now)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -150,13 +150,12 @@ impl JwtManager {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        let secret_date = DateTime::parse_from_rfc3339(&date_str.0)
-            .map_err(|e| AppError::Internal(format!("Invalid date format: {}", e)))?
-            .with_timezone(&Utc);
+        let secret_timestamp: i64 = date_str.0.parse()
+            .map_err(|e| AppError::Internal(format!("Invalid timestamp format: {}", e)))?;
 
         // 2. 检查是否超过轮换周期
-        let now = Utc::now();
-        let days_elapsed = (now - secret_date).num_days();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        let days_elapsed = (now - secret_timestamp) / 86400;
 
         if days_elapsed >= self.rotation_days as i64 {
             self.rotate_secrets().await?;
@@ -179,7 +178,7 @@ impl JwtManager {
 
         // 2. 生成新密钥
         let new_secret = self.generate_secret();
-        let now = Utc::now().to_rfc3339();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
 
         // 3. 更新或插入上一个密钥
         sqlx::query(
@@ -189,10 +188,10 @@ impl JwtManager {
         )
         .bind("jwt_secret_previous")
         .bind(&current.0)
-        .bind(&now)
-        .bind(&now)
+        .bind(now)
+        .bind(now)
         .bind(&current.0)
-        .bind(&now)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -202,7 +201,7 @@ impl JwtManager {
             "UPDATE kv_store SET value = ?, updated_at = ? WHERE key = 'jwt_secret_current'"
         )
         .bind(&new_secret)
-        .bind(&now)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -211,8 +210,8 @@ impl JwtManager {
         sqlx::query(
             "UPDATE kv_store SET value = ?, updated_at = ? WHERE key = 'jwt_secret_date'"
         )
-        .bind(&now)
-        .bind(&now)
+        .bind(now.to_string())
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -243,15 +242,15 @@ impl JwtManager {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         // 2. 创建声明
-        let now = Utc::now();
-        let exp = now + Duration::hours(self.expiry_hours as i64);
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        let exp = now + (self.expiry_hours as i64 * 3600);
 
         let claims = Claims {
             sub: sub.to_string(),
             name: name.to_string(),
             role: role.to_string(),
-            exp: exp.timestamp(),
-            iat: now.timestamp(),
+            exp,
+            iat: now,
         };
 
         // 3. 编码令牌

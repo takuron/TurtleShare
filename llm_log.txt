@@ -35,3 +35,4 @@
 [2026-03-27T10:15:15+08:00] 实现滑动窗口限流器：创建RateLimiter支持按IP限流；为管理员登录接口添加每IP每5分钟最多10次请求的限流保护；添加TooManyRequests错误类型；更新API文档
 [2026-03-28T16:27:05+08:00] Implemented admin user management endpoints including CRUD operations and tier querying.
 [2026-03-28T16:30:07+08:00] Updated docs/api.md with detailed descriptions for admin user management endpoints.
+[2026-03-28T16:56:57+08:00] 将时间格式从RFC3339字符串迁移到Unix时间戳。更新了所有模型、JWT管理器、管理员处理器和文档。创建了数据库迁移脚本migrate_to_unix_timestamps.py。

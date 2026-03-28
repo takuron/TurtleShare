@@ -92,7 +92,7 @@
 - [ ] Validate all request parameters
 - [ ] Sanitize user inputs
 - [ ] Validate file uploads (size, type)
-- [ ] Validate date formats (RFC 3339)
+- [x] Migrate time format from RFC 3339 strings to Unix timestamps
 
 ### Security / 安全
 - [ ] Implement Argon2 password hashing

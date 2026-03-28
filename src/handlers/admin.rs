@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use std::net::SocketAddr;
+use std::time::{SystemTime, UNIX_EPOCH};
 use crate::config::AdminConfig;
 use crate::utils::{hash, jwt::JwtManager, rate_limiter::RateLimiter};
 use crate::error::AppError;
@@ -148,7 +149,7 @@ pub async fn create_user(
     Json(req): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let password_hash = hash::hash_password(&req.password)?;
-    let created_at = chrono::Utc::now().to_rfc3339();
+    let created_at = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
 
     let id = sqlx::query(
         "INSERT INTO users (username, password_hash, email, note, created_at) VALUES (?, ?, ?, ?, ?)"
@@ -157,7 +158,7 @@ pub async fn create_user(
     .bind(&password_hash)
     .bind(&req.email)
     .bind(&req.note)
-    .bind(&created_at)
+    .bind(created_at)
     .execute(&state.pool)
     .await
     .map_err(|e| {
@@ -280,7 +281,7 @@ pub async fn delete_user(
 // // get_user_tier 的查询参数。
 #[derive(Deserialize)]
 pub struct TierQuery {
-    pub at: Option<String>,
+    pub at: Option<i64>,
 }
 
 /// Response for get_user_tier.
@@ -303,14 +304,14 @@ pub async fn get_user_tier(
     Path(id): Path<i64>,
     Query(query): Query<TierQuery>,
 ) -> Result<impl IntoResponse, AppError> {
-    let at = query.at.unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+    let at = query.at.unwrap_or_else(|| SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64);
 
     let result: Option<(i64,)> = sqlx::query_as(
         "SELECT MAX(tier) FROM user_subscriptions WHERE user_id = ? AND start_date <= ? AND end_date >= ?"
     )
     .bind(id)
-    .bind(&at)
-    .bind(&at)
+    .bind(at)
+    .bind(at)
     .fetch_optional(&state.pool)
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;

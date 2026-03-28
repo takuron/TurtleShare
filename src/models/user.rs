@@ -11,7 +11,7 @@ pub struct User {
     pub password_hash: String,
     pub email: Option<String>,
     pub note: Option<String>,
-    pub created_at: String,
+    pub created_at: i64,
 }
 
 /// Request payload for user registration.

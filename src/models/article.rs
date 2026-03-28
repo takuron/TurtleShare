@@ -12,8 +12,8 @@ pub struct Article {
     pub required_tier: i32,
     pub is_public: bool,
     pub file_links: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 /// Request payload for creating an article.

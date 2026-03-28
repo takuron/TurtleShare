@@ -79,11 +79,13 @@ List all registered users. Password hashes are excluded from the response.
       "username": "user1",
       "email": "user1@example.com",
       "note": "A test user",
-      "created_at": "2024-03-20T10:00:00Z"
+      "created_at": 1710928800
     }
   ]
 }
 ```
+
+**Note / 注意:** All timestamp fields are Unix timestamps (seconds since epoch) / 所有时间戳字段均为 Unix 时间戳（自纪元以来的秒数）
 
 ### GET /api/admin/users/:id
 Get detail for a specific user.
@@ -101,7 +103,7 @@ Get detail for a specific user.
     "username": "user1",
     "email": "user1@example.com",
     "note": "A test user",
-    "created_at": "2024-03-20T10:00:00Z"
+    "created_at": 1710928800
   }
 }
 ```
@@ -114,7 +116,7 @@ Get a user's subscription tier at a specific time. If `at` is omitted, defaults 
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
 
 **Query Parameters / 查询参数:**
-- `at` (string, optional) - RFC 3339 timestamp (e.g., `2024-03-20T10:00:00Z`)
+- `at` (integer, optional) - Unix timestamp (e.g., `1710928800`)
 
 **Response / 响应:** `200 OK`
 ```json
@@ -152,7 +154,7 @@ Create a new user.
     "username": "new_user",
     "email": "new@example.com",
     "note": "Optional note",
-    "created_at": "2024-03-21T12:00:00Z"
+    "created_at": 1711022400
   }
 }
 ```
@@ -183,7 +185,7 @@ Update an existing user. Only the provided fields are updated.
     "username": "updated_user",
     "email": "updated@example.com",
     "note": "Updated note",
-    "created_at": "2024-03-21T12:00:00Z"
+    "created_at": 1711022400
   }
 }
 ```
@@ -353,7 +355,7 @@ TurtleShare uses standard **Argon2id** for password hashing. Passwords should be
 **KV Storage Keys / KV 存储键**
 - `jwt_secret_current` - Current secret (base64, 256-bit) / 当前密钥
 - `jwt_secret_previous` - Previous secret (base64, nullable) / 上一个密钥
-- `jwt_secret_date` - Current secret creation time (RFC 3339) / 当前密钥创建时间
+- `jwt_secret_date` - Current secret creation time (Unix timestamp) / 当前密钥创建时间
 
 **Secret Generation / 密钥生成**
 ```

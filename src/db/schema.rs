@@ -9,16 +9,16 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     email TEXT,
     note TEXT,
-    created_at TEXT NOT NULL
+    created_at INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_subscriptions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     tier INTEGER NOT NULL,
-    start_date TEXT NOT NULL,
-    end_date TEXT NOT NULL,
-    created_at TEXT NOT NULL,
+    start_date INTEGER NOT NULL,
+    end_date INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS articles (
     required_tier INTEGER NOT NULL DEFAULT 0,
     is_public INTEGER NOT NULL DEFAULT 0,
     file_links TEXT,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS files (
@@ -39,13 +39,13 @@ CREATE TABLE IF NOT EXISTS files (
     uuid TEXT UNIQUE NOT NULL,
     original_name TEXT NOT NULL,
     file_size INTEGER NOT NULL,
-    created_at TEXT NOT NULL
+    created_at INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS kv_store (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
 );
 "#;

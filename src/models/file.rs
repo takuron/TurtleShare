@@ -9,5 +9,5 @@ pub struct FileMetadata {
     pub uuid: String,
     pub original_name: String,
     pub file_size: i64,
-    pub created_at: String,
+    pub created_at: i64,
 }
