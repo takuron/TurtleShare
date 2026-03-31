@@ -116,11 +116,16 @@ pub async fn upload_file(
     {
         let name = field.name().unwrap_or("").to_string();
         if name == "file" {
-            // 获取原始文件名
-            let original_name = field
+            // 获取原始文件名（去除路径组件，防止路径遍历）
+            let raw_name = field
                 .file_name()
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| "unnamed".to_string());
+            let original_name = std::path::Path::new(&raw_name)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("unnamed")
+                .to_string();
 
             // 读取文件内容
             let data = field

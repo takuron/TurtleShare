@@ -5,6 +5,7 @@
 
 mod admin_articles;
 mod admin_auth;
+mod admin_files;
 mod admin_subscriptions;
 mod admin_users;
 mod common;

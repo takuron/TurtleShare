@@ -260,6 +260,24 @@ impl TestServer {
             .expect("Authenticated DELETE request failed")
     }
 
+    /// Sends a POST request with multipart form data and Bearer token.
+    //
+    // // 发送带 multipart 表单数据和 Bearer 令牌的 POST 请求。
+    pub async fn post_multipart_with_token(
+        &self,
+        path: &str,
+        form: reqwest::multipart::Form,
+        token: &str,
+    ) -> reqwest::Response {
+        self.client
+            .post(self.url(path))
+            .bearer_auth(token)
+            .multipart(form)
+            .send()
+            .await
+            .expect("Authenticated multipart POST request failed")
+    }
+
     /// Logs in as admin and returns the JWT token.
     //
     // // 以管理员身份登录并返回 JWT 令牌。
