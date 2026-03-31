@@ -1,14 +1,14 @@
-// Public endpoints (no authentication required)
+// Public API endpoints (no authentication required)
 //
-// // 公开端点（无需身份验证）
+// // 公开 API 端点（无需身份验证）
 
 use axum::{routing::get, Json, Router};
 use crate::config::SiteInfoConfig;
-use super::common::ApiResponse;
+use crate::handlers::common::ApiResponse;
 
-/// Creates the public routes.
+/// Creates the public API routes.
 //
-// // 创建公开路由。
+// // 创建公开 API 路由。
 pub fn routes(site_info: SiteInfoConfig) -> Router {
     Router::new()
         .route("/api", get(|| async { "TurtleShare API is running!" }))

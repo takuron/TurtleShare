@@ -2,12 +2,13 @@
 //
 // // 主路由组装器
 
-use super::{admin, article, file, public, static_files};
+use super::admin;
+use super::public;
 use crate::config::Config;
 use crate::utils::{hashid::HashIdManager, jwt::JwtManager, rate_limiter::RateLimiter};
 use axum::{
     Router,
-    routing::{delete, get, post, put},
+    routing::{get, post, put},
 };
 use std::sync::Arc;
 
@@ -33,39 +34,41 @@ pub fn create_router(
     };
 
     let admin_protected = Router::new()
-        .route("/users", get(admin::list_users).post(admin::create_user))
+        .route("/users", get(admin::users::list_users).post(admin::users::create_user))
         .route(
             "/users/{hash_id}",
-            get(admin::get_user)
-                .put(admin::update_user)
-                .delete(admin::delete_user),
+            get(admin::users::get_user)
+                .put(admin::users::update_user)
+                .delete(admin::users::delete_user),
         )
-        .route("/users/{hash_id}/tier", get(admin::get_user_tier))
+        .route("/users/{hash_id}/tier", get(admin::users::get_user_tier))
         .route(
             "/users/{hash_id}/subscriptions",
-            get(admin::list_user_subscriptions).post(admin::create_subscription),
+            get(admin::subscriptions::list_user_subscriptions)
+                .post(admin::subscriptions::create_subscription),
         )
         .route(
             "/subscriptions/{hash_id}",
-            put(admin::update_subscription).delete(admin::delete_subscription),
+            put(admin::subscriptions::update_subscription)
+                .delete(admin::subscriptions::delete_subscription),
         )
         .route(
             "/articles",
-            get(article::list_articles).post(article::create_article),
+            get(admin::articles::list_articles).post(admin::articles::create_article),
         )
         .route(
             "/articles/{hash_id}",
-            get(article::get_article)
-                .put(article::update_article)
-                .delete(article::delete_article),
+            get(admin::articles::get_article)
+                .put(admin::articles::update_article)
+                .delete(admin::articles::delete_article),
         )
         .route(
             "/files",
-            get(file::list_files).post(file::upload_file),
+            get(admin::files::list_files).post(admin::files::upload_file),
         )
         .route(
             "/files/{hash_id}",
-            get(file::get_file).delete(file::delete_file),
+            get(admin::files::get_file).delete(admin::files::delete_file),
         )
         .route_layer(axum::middleware::from_fn_with_state(
             jwt_manager.clone(),
@@ -75,18 +78,16 @@ pub fn create_router(
 
     Router::new()
         // 2. 管理员登录路由
-        .route("/api/admin/login", post(admin::admin_login))
+        .route("/api/admin/login", post(admin::auth::admin_login))
         .with_state(admin_state)
         // 3. 保护的管理员路由
         .nest("/api/admin", admin_protected)
         // 4. 公共路由
-        .merge(public::routes(config.site_info))
-        .merge(static_files::routes(
+        .merge(public::api::routes(config.site_info))
+        .merge(super::static_files::routes(
             config.storage.static_path,
             config.storage.files_path,
         ))
     // 未来在此添加其他路由模块
     // .merge(user::routes())
-    // .merge(article::routes())
-    // .merge(file::routes())
 }

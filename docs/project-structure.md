@@ -20,12 +20,19 @@ src/
 │   ├── mod.rs           # Module exports / 模块导出 ✅
 │   ├── common.rs        # Common types (ApiResponse) / 通用类型 ✅
 │   ├── routes.rs        # Main router assembly / 主路由组装器 ✅
-│   ├── public.rs        # Public endpoints / 公开端点 ✅
 │   ├── static_files.rs  # Static file serving / 静态文件服务 ✅
-│   ├── admin.rs         # Admin endpoints (login, user/subscription CRUD with rate limiting) / 管理员端点（登录、用户/订阅CRUD，含限流） ✅
-│   ├── user.rs          # User endpoints / 用户端点 ⏳
-│   ├── article.rs       # Article endpoints / 文章端点 ✅
-│   └── file.rs          # File endpoints / 文件端点 ⏳
+│   ├── admin/           # Admin-only endpoints (require admin JWT) / 仅管理员端点（需管理员JWT）
+│   │   ├── mod.rs       # Admin module exports / 管理员模块导出 ✅
+│   │   ├── auth.rs      # Admin login, AdminState / 管理员登录、AdminState ✅
+│   │   ├── users.rs     # User CRUD, tier query / 用户CRUD、等级查询 ✅
+│   │   ├── subscriptions.rs # Subscription CRUD / 订阅CRUD ✅
+│   │   ├── articles.rs  # Article CRUD / 文章CRUD ✅
+│   │   └── files.rs     # File upload/management / 文件上传/管理 ✅
+│   ├── user/            # User endpoints (require user JWT) / 用户端点（需用户JWT）
+│   │   └── mod.rs       # User module placeholder / 用户模块占位 ⏳
+│   └── public/          # Public API endpoints (no auth) / 公开API端点（无需鉴权）
+│       ├── mod.rs       # Public module exports / 公开模块导出 ✅
+│       └── api.rs       # Health check, site info / 健康检查、站点信息 ✅
 ├── middleware/          # Middleware / 中间件
 │   ├── mod.rs           # ✅
 │   └── auth.rs          # Authentication (admin/user) / 鉴权（管理员/用户） ✅

@@ -1,10 +1,10 @@
-// Article handlers - Admin article management CRUD
+// Admin article management handlers
 //
-// // 文章处理器 - 管理员文章管理 CRUD
+// // 管理员文章管理处理器
 
-use super::common::ApiResponse;
+use super::auth::AdminState;
 use crate::error::AppError;
-use crate::handlers::admin::AdminState;
+use crate::handlers::common::ApiResponse;
 use crate::models::article::{
     Article, ArticleResponse, CreateArticleRequest, UpdateArticleRequest, serialize_file_links,
 };

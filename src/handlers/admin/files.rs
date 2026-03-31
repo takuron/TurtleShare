@@ -1,10 +1,10 @@
-// File handlers - Admin file management CRUD
+// Admin file management handlers
 //
-// // 文件处理器 - 管理员文件管理 CRUD
+// // 管理员文件管理处理器
 
-use super::common::ApiResponse;
+use super::auth::AdminState;
 use crate::error::AppError;
-use crate::handlers::admin::AdminState;
+use crate::handlers::common::ApiResponse;
 use crate::models::file::FileMetadata;
 use axum::{
     Json,
