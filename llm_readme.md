@@ -82,10 +82,12 @@ To ensure consistency and maintainability when using an LLM for development, the
 ## 2. Project Structure
 
 ### Documentation / 文档结构
+- `docs/project-structure.md` - Full project directory tree / 完整项目目录树
 - `docs/architecture.md` - Core architecture overview / 核心架构概述
 - `docs/configuration.md` - Configuration file details / 配置文件详情
 - `docs/api.md` - API endpoints and responses / API 端点和响应
 - `docs/database.md` - Database schema / 数据库模式
+- `docs/TODO.md` - Implementation tasks / 实现任务清单
 
 ### Configuration / 配置
 See `docs/configuration.md` for complete configuration details.

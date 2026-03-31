@@ -22,7 +22,7 @@ src/
 │   ├── routes.rs        # Main router assembly / 主路由组装器 ✅
 │   ├── public.rs        # Public endpoints / 公开端点 ✅
 │   ├── static_files.rs  # Static file serving / 静态文件服务 ✅
-│   ├── admin.rs         # Admin endpoints (login with rate limiting) / 管理员端点（含限流登录） ✅
+│   ├── admin.rs         # Admin endpoints (login, user/subscription CRUD with rate limiting) / 管理员端点（登录、用户/订阅CRUD，含限流） ✅
 │   ├── user.rs          # User endpoints / 用户端点 ⏳
 │   ├── article.rs       # Article endpoints / 文章端点 ⏳
 │   └── file.rs          # File endpoints / 文件端点 ⏳
@@ -42,6 +42,20 @@ src/
 - ✅ Implemented / 已实现
 - ⏳ Not yet implemented / 暂未实现
 
+## Tests / 测试
+
+```
+tests/
+└── system/              # System (integration) tests / 系统（集成）测试
+    ├── main.rs          # Test harness entry point / 测试入口 ✅
+    ├── common/
+    │   └── mod.rs       # Shared test utilities (server spawn, auth helpers) / 共享测试工具 ✅
+    ├── health_check.rs  # Health check endpoint tests / 健康检查端点测试 ✅
+    ├── admin_auth.rs    # Admin authentication tests / 管理员鉴权测试 ✅
+    ├── admin_users.rs   # Admin user management tests / 管理员用户管理测试 ✅
+    └── admin_subscriptions.rs # Admin subscription CRUD tests / 管理员订阅CRUD测试 ✅
+```
+
 ## Documentation / 文档
 
 ```
@@ -54,10 +68,15 @@ docs/
 └── TODO.md             # Implementation tasks / 实现任务清单 ✅
 ```
 
-## Development Tools / 开发工具
+## Root Files / 根目录文件
 
 ```
+Cargo.toml              # Rust project manifest / Rust 项目清单 ✅
+Cargo.lock              # Dependency lock file / 依赖锁定文件 ✅
+config.toml             # Application configuration / 应用配置文件 ✅
+LICENSE                 # Project license / 项目许可证 ✅
+README.md               # Project README / 项目说明 ✅
 llm_readme.md           # LLM coding specifications / LLM 编码规范 ✅
 llm_log.py              # Changelog maintenance script / 变更日志维护脚本 ✅
-Cargo.toml              # Rust project manifest / Rust 项目清单 ✅
+llm_log.txt             # Changelog output / 变更日志输出 ✅
 ```
