@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
     tier INTEGER NOT NULL,
     start_date INTEGER NOT NULL,
     end_date INTEGER NOT NULL,
+    note TEXT,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
