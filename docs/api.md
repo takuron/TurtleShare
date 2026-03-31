@@ -415,11 +415,223 @@ Delete a subscription from the database.
 **Note / 注意:** All subscription IDs in API requests and responses use hash IDs (encoded strings) for security. Numeric IDs are never exposed. / 所有 API 请求和响应中的订阅 ID 都使用哈希 ID（编码字符串）以保护安全。数字 ID 永远不会暴露。
 
 **Articles / 文章管理**
-- `GET /api/admin/articles` - List all articles / 列出所有文章
-- `GET /api/admin/articles/:id` - Get article detail / 获取文章详情
-- `POST /api/admin/articles` - Create article / 创建文章
-- `PUT /api/admin/articles/:id` - Update article / 更新文章
-- `DELETE /api/admin/articles/:id` - Delete article / 删除文章
+
+**Note / 注意:** All article IDs in API requests and responses use hash IDs (encoded strings) for security. Numeric IDs are never exposed. / 所有 API 请求和响应中的文章 ID 都使用哈希 ID（编码字符串）以保护安全。数字 ID 永远不会暴露。
+
+### GET /api/admin/articles
+List all articles, ordered by created_at descending.
+
+列出所有文章，按 created_at 降序排列。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "hash_id": "xK9mNq",
+      "title": "My Article",
+      "cover_image": "/files/uuid-123/cover.jpg",
+      "content": "# Hello\nArticle content here.",
+      "required_tier": 2,
+      "is_public": true,
+      "file_links": [{"name": "report.pdf", "url": "https://example.com/files/uuid-123/report.pdf"}],
+      "created_at": 1710928800,
+      "updated_at": 1710928800
+    }
+  ]
+}
+```
+
+### GET /api/admin/articles/:hash_id
+Get detail for a specific article.
+
+获取特定文章的详情。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - Article hash ID / 文章哈希 ID
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "hash_id": "xK9mNq",
+    "title": "My Article",
+    "cover_image": "/files/uuid-123/cover.jpg",
+    "content": "# Hello\nArticle content here.",
+    "required_tier": 2,
+    "is_public": true,
+    "file_links": [{"name": "report.pdf", "url": "https://example.com/files/uuid-123/report.pdf"}],
+    "created_at": 1710928800,
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Article not found"
+  }
+}
+```
+
+### POST /api/admin/articles
+Create a new article.
+
+创建新文章。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Request Body / 请求体:**
+```json
+{
+  "title": "My Article",
+  "cover_image": "/files/uuid-123/cover.jpg",
+  "content": "# Hello\nArticle content here.",
+  "required_tier": 2,
+  "is_public": true,
+  "file_links": [{"name": "report.pdf", "url": "https://example.com/files/uuid-123/report.pdf"}]
+}
+```
+
+**Request Fields / 请求字段:**
+- `title` (string, required) - Article title (must not be empty) / 文章标题（不能为空）
+- `cover_image` (string|null, optional) - Cover image path / 封面图片路径
+- `content` (string, required) - Article content (Markdown) / 文章内容（Markdown）
+- `required_tier` (integer, required) - Minimum subscription tier required (must be >= 0) / 访问所需的最低订阅等级（必须 >= 0）
+- `is_public` (boolean, required) - Whether the article is publicly listed / 文章是否公开列出
+- `file_links` (array, optional, default `[]`) - Array of file link objects, each with `name` (string) and `url` (string, must be an absolute URL starting with `http://` or `https://`) / 文件链接对象数组，每个包含 `name`（字符串）和 `url`（字符串，必须是以 `http://` 或 `https://` 开头的绝对链接），默认为空数组
+
+**Validation Rules / 验证规则:**
+- `title` must not be empty or whitespace-only / `title` 不能为空或仅包含空白字符
+- `required_tier` must be non-negative / `required_tier` 必须为非负数
+
+**Success Response / 成功响应:** `201 Created`
+```json
+{
+  "success": true,
+  "data": {
+    "hash_id": "xK9mNq",
+    "title": "My Article",
+    "cover_image": "/files/uuid-123/cover.jpg",
+    "content": "# Hello\nArticle content here.",
+    "required_tier": 2,
+    "is_public": true,
+    "file_links": [{"name": "report.pdf", "url": "https://example.com/files/uuid-123/report.pdf"}],
+    "created_at": 1710928800,
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Error Response / 错误响应:** `400 Bad Request`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "title must not be empty"
+  }
+}
+```
+
+### PUT /api/admin/articles/:hash_id
+Update an existing article. Only the provided fields are updated. The `updated_at` timestamp is automatically refreshed.
+
+更新现有文章。仅更新提供的字段。`updated_at` 时间戳会自动刷新。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - Article hash ID / 文章哈希 ID
+
+**Request Body / 请求体:** (All fields optional / 所有字段可选)
+```json
+{
+  "title": "Updated Title",
+  "cover_image": "/files/uuid-456/new-cover.jpg",
+  "content": "Updated content",
+  "required_tier": 3,
+  "is_public": false,
+  "file_links": [{"name": "new-file.pdf", "url": "https://example.com/files/uuid-789/new-file.pdf"}]
+}
+```
+
+**Note / 注意:** Setting `cover_image` to an empty string will clear the field (set to null). Setting `file_links` to an empty array `[]` will clear all file links. / 将 `cover_image` 设为空字符串将清除该字段（设为 null）。将 `file_links` 设为空数组 `[]` 将清除所有文件链接。
+
+**Validation Rules / 验证规则:**
+- If provided, `title` must not be empty or whitespace-only / 如果提供，`title` 不能为空或仅包含空白字符
+- If provided, `required_tier` must be non-negative / 如果提供，`required_tier` 必须为非负数
+
+**Success Response / 成功响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "hash_id": "xK9mNq",
+    "title": "Updated Title",
+    "cover_image": "/files/uuid-456/new-cover.jpg",
+    "content": "Updated content",
+    "required_tier": 3,
+    "is_public": false,
+    "file_links": [],
+    "created_at": 1710928800,
+    "updated_at": 1711022400
+  }
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Article not found"
+  }
+}
+```
+
+### DELETE /api/admin/articles/:hash_id
+Delete an article from the database.
+
+从数据库中删除文章。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - Article hash ID / 文章哈希 ID
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true,
+    "hash_id": "xK9mNq"
+  }
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Article not found"
+  }
+}
+```
 
 **Files / 文件管理**
 - `GET /api/admin/files` - List all files / 列出所有文件

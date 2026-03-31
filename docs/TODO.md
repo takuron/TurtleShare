@@ -45,11 +45,11 @@
 - [x] Implement DELETE /api/admin/subscriptions/:id (delete subscription)
 
 ### Article Management / 文章管理
-- [ ] Implement GET /api/admin/articles (list all articles)
-- [ ] Implement GET /api/admin/articles/:id (get article detail)
-- [ ] Implement POST /api/admin/articles (create article)
-- [ ] Implement PUT /api/admin/articles/:id (update article)
-- [ ] Implement DELETE /api/admin/articles/:id (delete article)
+- [x] Implement GET /api/admin/articles (list all articles)
+- [x] Implement GET /api/admin/articles/:id (get article detail)
+- [x] Implement POST /api/admin/articles (create article)
+- [x] Implement PUT /api/admin/articles/:id (update article)
+- [x] Implement DELETE /api/admin/articles/:id (delete article)
 
 ### File Management / 文件管理
 - [ ] Implement GET /api/admin/files (list all files)

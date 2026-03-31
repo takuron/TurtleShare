@@ -24,7 +24,7 @@ src/
 │   ├── static_files.rs  # Static file serving / 静态文件服务 ✅
 │   ├── admin.rs         # Admin endpoints (login, user/subscription CRUD with rate limiting) / 管理员端点（登录、用户/订阅CRUD，含限流） ✅
 │   ├── user.rs          # User endpoints / 用户端点 ⏳
-│   ├── article.rs       # Article endpoints / 文章端点 ⏳
+│   ├── article.rs       # Article endpoints / 文章端点 ✅
 │   └── file.rs          # File endpoints / 文件端点 ⏳
 ├── middleware/          # Middleware / 中间件
 │   ├── mod.rs           # ✅
@@ -51,6 +51,7 @@ tests/
     ├── common/
     │   └── mod.rs       # Shared test utilities (server spawn, auth helpers) / 共享测试工具 ✅
     ├── health_check.rs  # Health check endpoint tests / 健康检查端点测试 ✅
+    ├── admin_articles.rs # Admin article CRUD tests / 管理员文章CRUD测试 ✅
     ├── admin_auth.rs    # Admin authentication tests / 管理员鉴权测试 ✅
     ├── admin_users.rs   # Admin user management tests / 管理员用户管理测试 ✅
     └── admin_subscriptions.rs # Admin subscription CRUD tests / 管理员订阅CRUD测试 ✅

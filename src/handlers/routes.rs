@@ -2,7 +2,7 @@
 //
 // // 主路由组装器
 
-use super::{admin, public, static_files};
+use super::{admin, article, public, static_files};
 use crate::config::Config;
 use crate::utils::{hashid::HashIdManager, jwt::JwtManager, rate_limiter::RateLimiter};
 use axum::{
@@ -45,6 +45,16 @@ pub fn create_router(
         .route(
             "/subscriptions/{hash_id}",
             put(admin::update_subscription).delete(admin::delete_subscription),
+        )
+        .route(
+            "/articles",
+            get(article::list_articles).post(article::create_article),
+        )
+        .route(
+            "/articles/{hash_id}",
+            get(article::get_article)
+                .put(article::update_article)
+                .delete(article::delete_article),
         )
         .route_layer(axum::middleware::from_fn_with_state(
             jwt_manager.clone(),
