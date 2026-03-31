@@ -39,10 +39,10 @@
 - [x] Implement DELETE /api/admin/users/:id (delete user)
 
 ### User Subscriptions / 用户订阅管理
-- [ ] Implement GET /api/admin/users/:id/subscriptions (list user subscriptions)
-- [ ] Implement POST /api/admin/users/:id/subscriptions (add subscription period)
-- [ ] Implement PUT /api/admin/subscriptions/:id (update subscription)
-- [ ] Implement DELETE /api/admin/subscriptions/:id (delete subscription)
+- [x] Implement GET /api/admin/users/:id/subscriptions (list user subscriptions)
+- [x] Implement POST /api/admin/users/:id/subscriptions (add subscription period)
+- [x] Implement PUT /api/admin/subscriptions/:id (update subscription)
+- [x] Implement DELETE /api/admin/subscriptions/:id (delete subscription)
 
 ### Article Management / 文章管理
 - [ ] Implement GET /api/admin/articles (list all articles)

@@ -222,10 +222,190 @@ Delete a user and all their associated data (subscriptions).
 ```
 
 **User Subscriptions / 用户订阅管理**
-- `GET /api/admin/users/:hash_id/subscriptions` - List user subscriptions / 列出用户订阅
-- `POST /api/admin/users/:hash_id/subscriptions` - Add subscription period / 添加订阅时段
-- `PUT /api/admin/subscriptions/:id` - Update subscription / 更新订阅
-- `DELETE /api/admin/subscriptions/:id` - Delete subscription / 删除订阅
+
+### GET /api/admin/users/:hash_id/subscriptions
+List all subscriptions for a specific user. Subscriptions are ordered by start_date descending.
+
+列出特定用户的所有订阅。订阅按 start_date 降序排列。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - User hash ID / 用户哈希 ID
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "user_hash_id": "jR3kLm",
+      "tier": 2,
+      "start_date": 1710928800,
+      "end_date": 1713520800,
+      "created_at": 1710928800
+    },
+    {
+      "id": 2,
+      "user_hash_id": "jR3kLm",
+      "tier": 1,
+      "start_date": 1709280000,
+      "end_date": 1710928800,
+      "created_at": 1709280000
+    }
+  ]
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "User not found"
+  }
+}
+```
+
+### POST /api/admin/users/:hash_id/subscriptions
+Add a new subscription period for a user.
+
+为用户添加新的订阅时段。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - User hash ID / 用户哈希 ID
+
+**Request Body / 请求体:**
+```json
+{
+  "tier": 2,
+  "start_date": 1710928800,
+  "end_date": 1713520800
+}
+```
+
+**Request Fields / 请求字段:**
+- `tier` (integer, required) - Subscription tier level (must be >= 0) / 订阅等级（必须 >= 0）
+- `start_date` (integer, required) - Start date as Unix timestamp / 开始日期，Unix 时间戳
+- `end_date` (integer, required) - End date as Unix timestamp / 结束日期，Unix 时间戳
+
+**Validation Rules / 验证规则:**
+- `start_date` must be before `end_date` / `start_date` 必须早于 `end_date`
+- `tier` must be non-negative / `tier` 必须为非负数
+
+**Success Response / 成功响应:** `201 Created`
+```json
+{
+  "success": true,
+  "data": {
+    "id": 3,
+    "user_hash_id": "jR3kLm",
+    "tier": 2,
+    "start_date": 1710928800,
+    "end_date": 1713520800,
+    "created_at": 1710928800
+  }
+}
+```
+
+**Error Response / 错误响应:** `400 Bad Request`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "start_date must be before end_date"
+  }
+}
+```
+
+### PUT /api/admin/subscriptions/:id
+Update an existing subscription. Only the provided fields are updated.
+
+更新现有订阅。仅更新提供的字段。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `id` (integer) - Subscription numeric ID / 订阅数字 ID
+
+**Request Body / 请求体:** (All fields optional / 所有字段可选)
+```json
+{
+  "tier": 3,
+  "start_date": 1710928800,
+  "end_date": 1716196800
+}
+```
+
+**Validation Rules / 验证规则:**
+- After update, `start_date` must be before `end_date` / 更新后 `start_date` 必须早于 `end_date`
+- `tier` must be non-negative if provided / 如果提供，`tier` 必须为非负数
+
+**Success Response / 成功响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "id": 3,
+    "user_hash_id": "jR3kLm",
+    "tier": 3,
+    "start_date": 1710928800,
+    "end_date": 1716196800,
+    "created_at": 1710928800
+  }
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Subscription not found"
+  }
+}
+```
+
+### DELETE /api/admin/subscriptions/:id
+Delete a subscription from the database.
+
+从数据库中删除订阅。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `id` (integer) - Subscription numeric ID / 订阅数字 ID
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true,
+    "id": 3,
+    "user_hash_id": "jR3kLm"
+  }
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Subscription not found"
+  }
+}
+```
+
+**Note / 注意:** Subscription endpoints use numeric IDs (not hash IDs) for the subscription itself, but return `user_hash_id` in responses for reference. / 订阅端点对订阅本身使用数字 ID（而非哈希 ID），但在响应中返回 `user_hash_id` 以供参考。
 
 **Articles / 文章管理**
 - `GET /api/admin/articles` - List all articles / 列出所有文章

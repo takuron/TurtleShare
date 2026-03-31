@@ -1,21 +1,24 @@
-use axum::{
-    extract::{State, Path, Query},
-    http::StatusCode,
-    Json,
-    response::IntoResponse,
-    extract::ConnectInfo,
+use super::common::ApiResponse;
+use crate::config::AdminConfig;
+use crate::error::AppError;
+use crate::models::subscription::{
+    CreateSubscriptionRequest, SubscriptionResponse, UpdateSubscriptionRequest, UserSubscription,
 };
+use crate::models::user::{CreateUserRequest, UpdateUserRequest, User, UserResponse};
+use crate::utils::{hash, hashid::HashIdManager, jwt::JwtManager, rate_limiter::RateLimiter};
 use axum::extract::rejection::JsonRejection;
+use axum::{
+    Json,
+    extract::ConnectInfo,
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::IntoResponse,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use std::sync::Arc;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::config::AdminConfig;
-use crate::utils::{hash, jwt::JwtManager, hashid::HashIdManager, rate_limiter::RateLimiter};
-use crate::error::AppError;
-use crate::models::user::{User, UserResponse, CreateUserRequest, UpdateUserRequest};
-use super::common::ApiResponse;
 
 /// Admin login request.
 //
@@ -65,7 +68,8 @@ pub async fn admin_login(
     }
 
     // 2. 处理 JSON 解析错误
-    let Json(req) = payload.map_err(|_| AppError::ValidationError("Invalid JSON format".to_string()))?;
+    let Json(req) =
+        payload.map_err(|_| AppError::ValidationError("Invalid JSON format".to_string()))?;
 
     // 3. 验证用户名
     if req.username != state.admin_config.username {
@@ -78,14 +82,17 @@ pub async fn admin_login(
     }
 
     // 5. 生成 JWT 令牌（sub 固定为 "admin"）
-    let token = state.jwt_manager.generate_token("admin", &req.username, "admin").await?;
+    let token = state
+        .jwt_manager
+        .generate_token("admin", &req.username, "admin")
+        .await?;
 
     Ok((
         StatusCode::OK,
         Json(ApiResponse {
             success: true,
             data: AdminLoginResponse { token },
-        })
+        }),
     ))
 }
 
@@ -96,18 +103,17 @@ pub async fn admin_login(
 // // 列出所有用户。
 // //
 // // 返回所有用户的列表。
-pub async fn list_users(
-    State(state): State<AdminState>,
-) -> Result<impl IntoResponse, AppError> {
+pub async fn list_users(State(state): State<AdminState>) -> Result<impl IntoResponse, AppError> {
     let users = sqlx::query_as::<_, User>(
-        "SELECT id, username, password_hash, email, note, created_at FROM users"
+        "SELECT id, username, password_hash, email, note, created_at FROM users",
     )
     .fetch_all(&state.pool)
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
 
     // 转换为带有 hash_id 的响应
-    let user_responses: Vec<UserResponse> = users.iter()
+    let user_responses: Vec<UserResponse> = users
+        .iter()
         .map(|u| u.to_response(state.hashid_manager.encode(u.id).unwrap_or_default()))
         .collect();
 
@@ -132,7 +138,7 @@ pub async fn get_user(
     let id = state.hashid_manager.decode(&hash_id)?;
 
     let user = sqlx::query_as::<_, User>(
-        "SELECT id, username, password_hash, email, note, created_at FROM users WHERE id = ?"
+        "SELECT id, username, password_hash, email, note, created_at FROM users WHERE id = ?",
     )
     .bind(id)
     .fetch_optional(&state.pool)
@@ -158,7 +164,10 @@ pub async fn create_user(
     Json(req): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let password_hash = hash::hash_password(&req.password)?;
-    let created_at = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+    let created_at = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
 
     let id = sqlx::query(
         "INSERT INTO users (username, password_hash, email, note, created_at) VALUES (?, ?, ?, ?, ?)"
@@ -215,7 +224,7 @@ pub async fn update_user(
     let id = state.hashid_manager.decode(&hash_id)?;
 
     let mut user = sqlx::query_as::<_, User>(
-        "SELECT id, username, password_hash, email, note, created_at FROM users WHERE id = ?"
+        "SELECT id, username, password_hash, email, note, created_at FROM users WHERE id = ?",
     )
     .bind(id)
     .fetch_optional(&state.pool)
@@ -245,7 +254,7 @@ pub async fn update_user(
     }
 
     sqlx::query(
-        "UPDATE users SET username = ?, password_hash = ?, email = ?, note = ? WHERE id = ?"
+        "UPDATE users SET username = ?, password_hash = ?, email = ?, note = ? WHERE id = ?",
     )
     .bind(&user.username)
     .bind(&user.password_hash)
@@ -324,7 +333,12 @@ pub async fn get_user_tier(
     // 解码 hash_id 为数字 ID
     let id = state.hashid_manager.decode(&hash_id)?;
 
-    let at = query.at.unwrap_or_else(|| SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64);
+    let at = query.at.unwrap_or_else(|| {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64
+    });
 
     let result: Option<(i64,)> = sqlx::query_as(
         "SELECT MAX(tier) FROM user_subscriptions WHERE user_id = ? AND start_date <= ? AND end_date >= ?"
@@ -341,5 +355,235 @@ pub async fn get_user_tier(
     Ok(Json(ApiResponse {
         success: true,
         data: TierResponse { tier },
+    }))
+}
+
+/// List user subscriptions.
+///
+/// Returns all subscriptions for a specific user.
+//
+// // 列出用户订阅。
+// //
+// // 返回特定用户的所有订阅。
+pub async fn list_user_subscriptions(
+    State(state): State<AdminState>,
+    Path(hash_id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    // 1. 解码 hash_id 为数字 ID
+    let user_id = state.hashid_manager.decode(&hash_id)?;
+
+    // 2. 验证用户存在
+    let user_exists: Option<(i64,)> = sqlx::query_as("SELECT id FROM users WHERE id = ?")
+        .bind(user_id)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    if user_exists.is_none() {
+        return Err(AppError::NotFound("User not found".to_string()));
+    }
+
+    // 3. 查询用户的所有订阅
+    let subscriptions = sqlx::query_as::<_, UserSubscription>(
+        "SELECT id, user_id, tier, start_date, end_date, created_at FROM user_subscriptions WHERE user_id = ? ORDER BY start_date DESC"
+    )
+    .bind(user_id)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // 4. 转换为带有 user_hash_id 的响应
+    let responses: Vec<SubscriptionResponse> = subscriptions
+        .iter()
+        .map(|s| s.to_response(hash_id.clone()))
+        .collect();
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: responses,
+    }))
+}
+
+/// Create subscription.
+///
+/// Adds a new subscription period for a user.
+//
+// // 创建订阅。
+// //
+// // 为用户添加新的订阅时段。
+pub async fn create_subscription(
+    State(state): State<AdminState>,
+    Path(hash_id): Path<String>,
+    Json(req): Json<CreateSubscriptionRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    // 1. 解码 hash_id 为数字 ID
+    let user_id = state.hashid_manager.decode(&hash_id)?;
+
+    // 2. 验证用户存在
+    let user_exists: Option<(i64,)> = sqlx::query_as("SELECT id FROM users WHERE id = ?")
+        .bind(user_id)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    if user_exists.is_none() {
+        return Err(AppError::NotFound("User not found".to_string()));
+    }
+
+    // 3. 验证时间范围
+    if req.start_date > req.end_date {
+        return Err(AppError::ValidationError(
+            "start_date must be before end_date".to_string(),
+        ));
+    }
+
+    // 4. 验证等级
+    if req.tier < 0 {
+        return Err(AppError::ValidationError(
+            "tier must be non-negative".to_string(),
+        ));
+    }
+
+    let created_at = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+
+    // 5. 插入订阅记录
+    let id = sqlx::query(
+        "INSERT INTO user_subscriptions (user_id, tier, start_date, end_date, created_at) VALUES (?, ?, ?, ?, ?)"
+    )
+    .bind(user_id)
+    .bind(req.tier)
+    .bind(req.start_date)
+    .bind(req.end_date)
+    .bind(created_at)
+    .execute(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?
+    .last_insert_rowid();
+
+    let subscription = UserSubscription {
+        id,
+        user_id,
+        tier: req.tier,
+        start_date: req.start_date,
+        end_date: req.end_date,
+        created_at,
+    };
+
+    Ok((
+        StatusCode::CREATED,
+        Json(ApiResponse {
+            success: true,
+            data: subscription.to_response(hash_id),
+        }),
+    ))
+}
+
+/// Update subscription.
+///
+/// Updates an existing subscription's information.
+//
+// // 更新订阅。
+// //
+// // 更新现有订阅的信息。
+pub async fn update_subscription(
+    State(state): State<AdminState>,
+    Path(subscription_id): Path<i64>,
+    Json(req): Json<UpdateSubscriptionRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    // 1. 查询现有订阅
+    let mut subscription = sqlx::query_as::<_, UserSubscription>(
+        "SELECT id, user_id, tier, start_date, end_date, created_at FROM user_subscriptions WHERE id = ?"
+    )
+    .bind(subscription_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?
+    .ok_or_else(|| AppError::NotFound("Subscription not found".to_string()))?;
+
+    // 2. 更新提供的字段
+    if let Some(tier) = req.tier {
+        if tier < 0 {
+            return Err(AppError::ValidationError(
+                "tier must be non-negative".to_string(),
+            ));
+        }
+        subscription.tier = tier;
+    }
+    if let Some(start_date) = req.start_date {
+        subscription.start_date = start_date;
+    }
+    if let Some(end_date) = req.end_date {
+        subscription.end_date = end_date;
+    }
+
+    // 3. 验证时间范围
+    if subscription.start_date > subscription.end_date {
+        return Err(AppError::ValidationError(
+            "start_date must be before end_date".to_string(),
+        ));
+    }
+
+    // 4. 更新数据库
+    sqlx::query(
+        "UPDATE user_subscriptions SET tier = ?, start_date = ?, end_date = ? WHERE id = ?",
+    )
+    .bind(subscription.tier)
+    .bind(subscription.start_date)
+    .bind(subscription.end_date)
+    .bind(subscription_id)
+    .execute(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // 5. 获取用户的 hash_id 用于响应
+    let user_hash_id = state.hashid_manager.encode(subscription.user_id)?;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: subscription.to_response(user_hash_id),
+    }))
+}
+
+/// Delete subscription.
+///
+/// Removes a subscription from the database.
+//
+// // 删除订阅。
+// //
+// // 从数据库中移除订阅。
+pub async fn delete_subscription(
+    State(state): State<AdminState>,
+    Path(subscription_id): Path<i64>,
+) -> Result<impl IntoResponse, AppError> {
+    // 1. 先查询订阅以获取 user_id（用于验证存在性）
+    let subscription = sqlx::query_as::<_, UserSubscription>(
+        "SELECT id, user_id, tier, start_date, end_date, created_at FROM user_subscriptions WHERE id = ?"
+    )
+    .bind(subscription_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?
+    .ok_or_else(|| AppError::NotFound("Subscription not found".to_string()))?;
+
+    // 2. 删除订阅
+    sqlx::query("DELETE FROM user_subscriptions WHERE id = ?")
+        .bind(subscription_id)
+        .execute(&state.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // 3. 获取用户的 hash_id 用于响应
+    let user_hash_id = state.hashid_manager.encode(subscription.user_id)?;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: serde_json::json!({
+            "deleted": true,
+            "id": subscription_id,
+            "user_hash_id": user_hash_id
+        }),
     }))
 }
