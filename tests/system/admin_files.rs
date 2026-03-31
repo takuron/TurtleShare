@@ -6,18 +6,27 @@
 use super::common;
 use reqwest::multipart;
 use serde_json::Value;
+use sha2::{Digest, Sha256};
+
+/// 计算字节数据的 SHA256 十六进制摘要。
+fn sha256_hex(data: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    let result = hasher.finalize();
+    result.iter().map(|b| format!("{:02x}", b)).collect()
+}
 
 // ============================================================
 // 辅助函数
 // ============================================================
 
-/// 上传一个测试文件并返回其 hash_id。
+/// 上传一个测试文件并返回 (hash_id, uuid)。
 async fn upload_test_file(
     server: &common::TestServer,
     token: &str,
     filename: &str,
     content: &[u8],
-) -> String {
+) -> (String, String) {
     let part = multipart::Part::bytes(content.to_vec())
         .file_name(filename.to_string())
         .mime_str("application/octet-stream")
@@ -30,20 +39,24 @@ async fn upload_test_file(
 
     assert_eq!(resp.status(), 201, "Failed to upload file {}", filename);
     let body: Value = resp.json().await.unwrap();
-    body["data"]["hash_id"].as_str().unwrap().to_string()
+    let hash_id = body["data"]["hash_id"].as_str().unwrap().to_string();
+    let uuid = body["data"]["uuid"].as_str().unwrap().to_string();
+    (hash_id, uuid)
 }
 
 // ============================================================
 // 上传文件
 // ============================================================
 
-/// 上传文件应返回 201 和正确的文件信息。
+/// 上传文件应返回 201 和正确的文件信息，且可通过静态路径下载并校验 SHA256。
 #[tokio::test]
 async fn upload_file_success() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
     let file_content = b"Hello, TurtleShare!";
+    let expected_sha256 = sha256_hex(file_content);
+
     let part = multipart::Part::bytes(file_content.to_vec())
         .file_name("hello.txt".to_string())
         .mime_str("text/plain")
@@ -80,9 +93,17 @@ async fn upload_file_success() {
 
     // 响应中不应包含数字 ID
     assert!(data["id"].is_null());
+
+    // 通过静态路径下载文件并校验内容和 SHA256
+    let download_path = format!("/files/{}/hello.txt", uuid);
+    let download_resp = server.get(&download_path).await;
+    assert_eq!(download_resp.status(), 200);
+    let downloaded = download_resp.bytes().await.unwrap();
+    assert_eq!(downloaded.as_ref(), file_content);
+    assert_eq!(sha256_hex(&downloaded), expected_sha256);
 }
 
-/// 上传二进制文件应成功。
+/// 上传二进制文件应成功，且可通过静态路径下载并校验 SHA256。
 #[tokio::test]
 async fn upload_binary_file() {
     let server = common::TestServer::spawn().await;
@@ -93,6 +114,8 @@ async fn upload_binary_file() {
         0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
         0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
     ];
+    let expected_sha256 = sha256_hex(&binary_content);
+
     let part = multipart::Part::bytes(binary_content.clone())
         .file_name("test.png".to_string())
         .mime_str("image/png")
@@ -107,15 +130,26 @@ async fn upload_binary_file() {
     let body: Value = resp.json().await.unwrap();
     assert_eq!(body["data"]["original_name"], "test.png");
     assert_eq!(body["data"]["file_size"], binary_content.len() as i64);
+
+    // 通过静态路径下载并校验二进制内容和 SHA256
+    let uuid = body["data"]["uuid"].as_str().unwrap();
+    let download_resp = server.get(&format!("/files/{}/test.png", uuid)).await;
+    assert_eq!(download_resp.status(), 200);
+    let downloaded = download_resp.bytes().await.unwrap();
+    assert_eq!(downloaded.as_ref(), binary_content.as_slice());
+    assert_eq!(sha256_hex(&downloaded), expected_sha256);
 }
 
-/// 上传空文件应成功（file_size = 0）。
+/// 上传空文件应成功（file_size = 0），且可通过静态路径下载并校验。
 #[tokio::test]
 async fn upload_empty_file() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
-    let part = multipart::Part::bytes(vec![])
+    let empty_content: Vec<u8> = vec![];
+    let expected_sha256 = sha256_hex(&empty_content);
+
+    let part = multipart::Part::bytes(empty_content.clone())
         .file_name("empty.txt".to_string())
         .mime_str("text/plain")
         .unwrap();
@@ -129,6 +163,14 @@ async fn upload_empty_file() {
     let body: Value = resp.json().await.unwrap();
     assert_eq!(body["data"]["file_size"], 0);
     assert_eq!(body["data"]["original_name"], "empty.txt");
+
+    // 通过静态路径下载空文件并校验
+    let uuid = body["data"]["uuid"].as_str().unwrap();
+    let download_resp = server.get(&format!("/files/{}/empty.txt", uuid)).await;
+    assert_eq!(download_resp.status(), 200);
+    let downloaded = download_resp.bytes().await.unwrap();
+    assert_eq!(downloaded.len(), 0);
+    assert_eq!(sha256_hex(&downloaded), expected_sha256);
 }
 
 /// 超过大小限制的文件应返回 400。
@@ -187,8 +229,8 @@ async fn upload_files_unique_uuids() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
-    let hash_id1 = upload_test_file(&server, &token, "file1.txt", b"content1").await;
-    let hash_id2 = upload_test_file(&server, &token, "file2.txt", b"content2").await;
+    let (hash_id1, _) = upload_test_file(&server, &token, "file1.txt", b"content1").await;
+    let (hash_id2, _) = upload_test_file(&server, &token, "file2.txt", b"content2").await;
 
     // 获取两个文件的详情
     let resp1 = server
@@ -282,7 +324,7 @@ async fn get_file_success() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
-    let hash_id = upload_test_file(&server, &token, "detail.txt", b"detail content").await;
+    let (hash_id, _) = upload_test_file(&server, &token, "detail.txt", b"detail content").await;
 
     let resp = server
         .get_with_token(&format!("/api/admin/files/{}", hash_id), &token)
@@ -304,7 +346,7 @@ async fn get_file_not_found() {
     let token = server.admin_login().await;
 
     // 创建再删除，得到合法但无效的 hash_id
-    let hash_id = upload_test_file(&server, &token, "ghost.txt", b"ghost").await;
+    let (hash_id, _) = upload_test_file(&server, &token, "ghost.txt", b"ghost").await;
     server
         .delete_with_token(&format!("/api/admin/files/{}", hash_id), &token)
         .await;
@@ -337,19 +379,16 @@ async fn get_file_invalid_hash_id() {
 // 删除文件
 // ============================================================
 
-/// 删除文件应成功，并从列表和磁盘中移除。
+/// 删除文件应成功，并从列表、磁盘和静态路径中移除。
 #[tokio::test]
 async fn delete_file_success() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
-    let hash_id = upload_test_file(&server, &token, "to_delete.txt", b"delete me").await;
+    let (hash_id, uuid) = upload_test_file(&server, &token, "to_delete.txt", b"delete me").await;
 
-    // 获取 uuid 以验证磁盘清理
-    let get_resp = server
-        .get_with_token(&format!("/api/admin/files/{}", hash_id), &token)
-        .await;
-    let get_body: Value = get_resp.json().await.unwrap();
-    let uuid = get_body["data"]["uuid"].as_str().unwrap().to_string();
+    // 删除前通过静态路径应能下载
+    let pre_dl = server.get(&format!("/files/{}/to_delete.txt", uuid)).await;
+    assert_eq!(pre_dl.status(), 200);
 
     let resp = server
         .delete_with_token(&format!("/api/admin/files/{}", hash_id), &token)
@@ -370,6 +409,10 @@ async fn delete_file_success() {
     // 验证磁盘上的文件目录已删除
     let dir_path = server.files_path.join(&uuid);
     assert!(!dir_path.exists(), "File directory should be deleted from disk");
+
+    // 删除后通过静态路径应返回 404
+    let post_dl = server.get(&format!("/files/{}/to_delete.txt", uuid)).await;
+    assert_eq!(post_dl.status(), 404);
 }
 
 /// 删除不存在的文件应返回 404。
@@ -378,7 +421,7 @@ async fn delete_file_not_found() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
-    let hash_id = upload_test_file(&server, &token, "delete_twice.txt", b"data").await;
+    let (hash_id, _) = upload_test_file(&server, &token, "delete_twice.txt", b"data").await;
     server
         .delete_with_token(&format!("/api/admin/files/{}", hash_id), &token)
         .await;
@@ -456,14 +499,17 @@ async fn all_file_routes_require_auth() {
     );
 }
 
-/// 文件名中包含路径遍历字符不应影响存储安全。
+/// 文件名中包含路径遍历字符不应影响存储安全，下载内容应正确。
 #[tokio::test]
 async fn upload_file_path_traversal_filename() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
+    let content = b"malicious";
+    let expected_sha256 = sha256_hex(content);
+
     let malicious_name = "../../../etc/passwd";
-    let part = multipart::Part::bytes(b"malicious".to_vec())
+    let part = multipart::Part::bytes(content.to_vec())
         .file_name(malicious_name.to_string())
         .mime_str("text/plain")
         .unwrap();
@@ -488,35 +534,42 @@ async fn upload_file_path_traversal_filename() {
     // 不应在 files_path 之外创建文件
     let escaped_path = server.files_path.parent().unwrap().join("etc").join("passwd");
     assert!(!escaped_path.exists(), "Path traversal should not escape storage directory");
+
+    // 通过静态路径下载清理后的文件名并校验 SHA256
+    let download_resp = server.get(&format!("/files/{}/passwd", uuid)).await;
+    assert_eq!(download_resp.status(), 200);
+    let downloaded = download_resp.bytes().await.unwrap();
+    assert_eq!(downloaded.as_ref(), content.as_slice());
+    assert_eq!(sha256_hex(&downloaded), expected_sha256);
 }
 
-/// 上传同名文件应各自存储在不同的 UUID 目录中。
+/// 上传同名文件应各自存储在不同的 UUID 目录中，下载内容各自正确。
 #[tokio::test]
 async fn upload_duplicate_filename() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
-    let hash_id1 = upload_test_file(&server, &token, "same.txt", b"version1").await;
-    let hash_id2 = upload_test_file(&server, &token, "same.txt", b"version2").await;
+    let content1 = b"version1";
+    let content2 = b"version2";
+    let (hash_id1, uuid1) = upload_test_file(&server, &token, "same.txt", content1).await;
+    let (hash_id2, uuid2) = upload_test_file(&server, &token, "same.txt", content2).await;
 
     assert_ne!(hash_id1, hash_id2);
+    assert_ne!(uuid1, uuid2, "Each upload should have a unique UUID");
 
-    // 两个文件都应存在
-    let resp1 = server
-        .get_with_token(&format!("/api/admin/files/{}", hash_id1), &token)
-        .await;
-    assert_eq!(resp1.status(), 200);
+    // 通过静态路径分别下载两个同名文件，校验内容和 SHA256
+    let dl1 = server.get(&format!("/files/{}/same.txt", uuid1)).await;
+    assert_eq!(dl1.status(), 200);
+    let bytes1 = dl1.bytes().await.unwrap();
+    assert_eq!(bytes1.as_ref(), content1);
+    assert_eq!(sha256_hex(&bytes1), sha256_hex(content1));
 
-    let resp2 = server
-        .get_with_token(&format!("/api/admin/files/{}", hash_id2), &token)
-        .await;
-    assert_eq!(resp2.status(), 200);
+    let dl2 = server.get(&format!("/files/{}/same.txt", uuid2)).await;
+    assert_eq!(dl2.status(), 200);
+    let bytes2 = dl2.bytes().await.unwrap();
+    assert_eq!(bytes2.as_ref(), content2);
+    assert_eq!(sha256_hex(&bytes2), sha256_hex(content2));
 
-    // UUID 应不同
-    let body1: Value = resp1.json().await.unwrap();
-    let body2: Value = resp2.json().await.unwrap();
-    assert_ne!(
-        body1["data"]["uuid"].as_str().unwrap(),
-        body2["data"]["uuid"].as_str().unwrap()
-    );
+    // 两个文件的 SHA256 应不同
+    assert_ne!(sha256_hex(&bytes1), sha256_hex(&bytes2));
 }
