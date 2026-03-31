@@ -40,3 +40,5 @@
 [2026-03-28T18:31:13+08:00] 实现黑箱集成测试框架：添加 tests/common/mod.rs（TestServer 自动启动/清理、随机端口、临时数据库、HTTP 客户端封装），添加 tests/health_check.rs 作为示例（4个测试覆盖 /api/health、/api、/api/public/site-info、404）
 [2026-03-28T18:44:19+08:00] 添加管理员身份验证测试(admin_auth.rs, 16个)和用户管理API测试(admin_users.rs, 23个)，覆盖正常流程、错误凭据、恶意请求(SQL注入/XSS/路径遍历/超长输入)、未认证访问等场景
 [2026-03-31T10:20:06+08:00] Implemented user subscription management endpoints: GET/POST /api/admin/users/:hash_id/subscriptions, PUT/DELETE /api/admin/subscriptions/:id. Added subscription model with request/response types, handlers with validation, and updated routes and API documentation.
+[2026-03-31T10:41:09+08:00] Added optional 'note' (TEXT) field to user_subscriptions model and all related admin endpoints (list/create/update/delete). Updated database schema doc and API doc accordingly.
+[2026-03-31T10:49:14+08:00] Changed subscription IDs from numeric to hash IDs across all subscription endpoints. Updated SubscriptionResponse.id to hash_id, changed update/delete path params to String hash_id with decoding, updated routes and API docs.

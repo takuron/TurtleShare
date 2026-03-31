@@ -43,7 +43,7 @@ pub fn create_router(
             get(admin::list_user_subscriptions).post(admin::create_subscription),
         )
         .route(
-            "/subscriptions/{subscription_id}",
+            "/subscriptions/{hash_id}",
             put(admin::update_subscription).delete(admin::delete_subscription),
         )
         .route_layer(axum::middleware::from_fn_with_state(

@@ -239,19 +239,21 @@ List all subscriptions for a specific user. Subscriptions are ordered by start_d
   "success": true,
   "data": [
     {
-      "id": 1,
+      "hash_id": "xK9mNq",
       "user_hash_id": "jR3kLm",
       "tier": 2,
       "start_date": 1710928800,
       "end_date": 1713520800,
+      "note": "Annual subscription",
       "created_at": 1710928800
     },
     {
-      "id": 2,
+      "hash_id": "pL3wRt",
       "user_hash_id": "jR3kLm",
       "tier": 1,
       "start_date": 1709280000,
       "end_date": 1710928800,
+      "note": null,
       "created_at": 1709280000
     }
   ]
@@ -284,7 +286,8 @@ Add a new subscription period for a user.
 {
   "tier": 2,
   "start_date": 1710928800,
-  "end_date": 1713520800
+  "end_date": 1713520800,
+  "note": "Annual subscription"
 }
 ```
 
@@ -292,6 +295,7 @@ Add a new subscription period for a user.
 - `tier` (integer, required) - Subscription tier level (must be >= 0) / 订阅等级（必须 >= 0）
 - `start_date` (integer, required) - Start date as Unix timestamp / 开始日期，Unix 时间戳
 - `end_date` (integer, required) - End date as Unix timestamp / 结束日期，Unix 时间戳
+- `note` (string|null, optional) - Admin-only note for this subscription / 仅管理员可见的订阅备注
 
 **Validation Rules / 验证规则:**
 - `start_date` must be before `end_date` / `start_date` 必须早于 `end_date`
@@ -302,11 +306,12 @@ Add a new subscription period for a user.
 {
   "success": true,
   "data": {
-    "id": 3,
+    "hash_id": "nQ7vBx",
     "user_hash_id": "jR3kLm",
     "tier": 2,
     "start_date": 1710928800,
     "end_date": 1713520800,
+    "note": "Annual subscription",
     "created_at": 1710928800
   }
 }
@@ -323,7 +328,7 @@ Add a new subscription period for a user.
 }
 ```
 
-### PUT /api/admin/subscriptions/:id
+### PUT /api/admin/subscriptions/:hash_id
 Update an existing subscription. Only the provided fields are updated.
 
 更新现有订阅。仅更新提供的字段。
@@ -331,14 +336,15 @@ Update an existing subscription. Only the provided fields are updated.
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
 
 **Path Parameters / 路径参数:**
-- `id` (integer) - Subscription numeric ID / 订阅数字 ID
+- `hash_id` (string) - Subscription hash ID / 订阅哈希 ID
 
 **Request Body / 请求体:** (All fields optional / 所有字段可选)
 ```json
 {
   "tier": 3,
   "start_date": 1710928800,
-  "end_date": 1716196800
+  "end_date": 1716196800,
+  "note": "Upgraded and extended"
 }
 ```
 
@@ -351,11 +357,12 @@ Update an existing subscription. Only the provided fields are updated.
 {
   "success": true,
   "data": {
-    "id": 3,
+    "hash_id": "nQ7vBx",
     "user_hash_id": "jR3kLm",
     "tier": 3,
     "start_date": 1710928800,
     "end_date": 1716196800,
+    "note": "Upgraded and extended",
     "created_at": 1710928800
   }
 }
@@ -372,7 +379,7 @@ Update an existing subscription. Only the provided fields are updated.
 }
 ```
 
-### DELETE /api/admin/subscriptions/:id
+### DELETE /api/admin/subscriptions/:hash_id
 Delete a subscription from the database.
 
 从数据库中删除订阅。
@@ -380,7 +387,7 @@ Delete a subscription from the database.
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
 
 **Path Parameters / 路径参数:**
-- `id` (integer) - Subscription numeric ID / 订阅数字 ID
+- `hash_id` (string) - Subscription hash ID / 订阅哈希 ID
 
 **Response / 响应:** `200 OK`
 ```json
@@ -388,7 +395,7 @@ Delete a subscription from the database.
   "success": true,
   "data": {
     "deleted": true,
-    "id": 3,
+    "hash_id": "nQ7vBx",
     "user_hash_id": "jR3kLm"
   }
 }
@@ -405,7 +412,7 @@ Delete a subscription from the database.
 }
 ```
 
-**Note / 注意:** Subscription endpoints use numeric IDs (not hash IDs) for the subscription itself, but return `user_hash_id` in responses for reference. / 订阅端点对订阅本身使用数字 ID（而非哈希 ID），但在响应中返回 `user_hash_id` 以供参考。
+**Note / 注意:** All subscription IDs in API requests and responses use hash IDs (encoded strings) for security. Numeric IDs are never exposed. / 所有 API 请求和响应中的订阅 ID 都使用哈希 ID（编码字符串）以保护安全。数字 ID 永远不会暴露。
 
 **Articles / 文章管理**
 - `GET /api/admin/articles` - List all articles / 列出所有文章
