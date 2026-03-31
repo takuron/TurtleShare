@@ -2,7 +2,7 @@
 //
 // // 主路由组装器
 
-use super::{admin, article, public, static_files};
+use super::{admin, article, file, public, static_files};
 use crate::config::Config;
 use crate::utils::{hashid::HashIdManager, jwt::JwtManager, rate_limiter::RateLimiter};
 use axum::{
@@ -27,6 +27,9 @@ pub fn create_router(
         hashid_manager: hashid_manager.clone(),
         rate_limiter: RateLimiter::new(300, 10),
         pool,
+        files_path: config.storage.files_path.clone(),
+        max_upload_size_bytes: config.storage.max_upload_size_mb * 1024 * 1024,
+        base_url: config.server.base_url.clone(),
     };
 
     let admin_protected = Router::new()
@@ -55,6 +58,14 @@ pub fn create_router(
             get(article::get_article)
                 .put(article::update_article)
                 .delete(article::delete_article),
+        )
+        .route(
+            "/files",
+            get(file::list_files).post(file::upload_file),
+        )
+        .route(
+            "/files/{hash_id}",
+            get(file::get_file).delete(file::delete_file),
         )
         .route_layer(axum::middleware::from_fn_with_state(
             jwt_manager.clone(),

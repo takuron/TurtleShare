@@ -634,10 +634,140 @@ Delete an article from the database.
 ```
 
 **Files / 文件管理**
-- `GET /api/admin/files` - List all files / 列出所有文件
-- `GET /api/admin/files/:id` - Get file metadata / 获取文件元数据
-- `POST /api/admin/files` - Upload file / 上传文件
-- `DELETE /api/admin/files/:id` - Delete file / 删除文件
+
+**Note / 注意:** All file IDs in API requests and responses use hash IDs (encoded strings) for security. Numeric IDs are never exposed. / 所有 API 请求和响应中的文件 ID 都使用哈希 ID（编码字符串）以保护安全。数字 ID 永远不会暴露。
+
+### GET /api/admin/files
+List all uploaded files, ordered by created_at descending.
+
+列出所有已上传文件，按 created_at 降序排列。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "hash_id": "xK9mNq",
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "original_name": "report.pdf",
+      "file_size": 1048576,
+      "url": "https://example.com/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/report.pdf",
+      "created_at": 1710928800
+    }
+  ]
+}
+```
+
+### GET /api/admin/files/:hash_id
+Get metadata for a specific file.
+
+获取特定文件的元数据。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - File hash ID / 文件哈希 ID
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "hash_id": "xK9mNq",
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "original_name": "report.pdf",
+    "file_size": 1048576,
+    "url": "https://example.com/files/a1b2c3d4-e5f6-7890-abcd-ef1234567890/report.pdf",
+    "created_at": 1710928800
+  }
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "File not found"
+  }
+}
+```
+
+### POST /api/admin/files
+Upload a file via multipart form data. The file is stored under a UUID v4 directory with its original filename.
+
+通过 multipart 表单数据上传文件。文件存储在 UUID v4 目录下，保留原始文件名。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Request Body / 请求体:** `multipart/form-data`
+- `file` (file, required) - The file to upload / 要上传的文件
+
+**Validation Rules / 验证规则:**
+- File size must not exceed `max_upload_size_mb` from config (default: 1024 MB) / 文件大小不得超过配置中的 `max_upload_size_mb`（默认：1024 MB）
+- A `file` field must be present in the multipart form / multipart 表单中必须包含 `file` 字段
+
+**Success Response / 成功响应:** `201 Created`
+```json
+{
+  "success": true,
+  "data": {
+    "hash_id": "pL9mNq",
+    "uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "original_name": "image.png",
+    "file_size": 204800,
+    "url": "https://example.com/files/b2c3d4e5-f6a7-8901-bcde-f12345678901/image.png",
+    "created_at": 1711022400
+  }
+}
+```
+
+**Error Response / 错误响应:** `400 Bad Request`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "File size exceeds maximum allowed size of 1024 MB"
+  }
+}
+```
+
+### DELETE /api/admin/files/:hash_id
+Delete a file from the database and disk.
+
+从数据库和磁盘中删除文件。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string) - File hash ID / 文件哈希 ID
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true,
+    "hash_id": "xK9mNq"
+  }
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "File not found"
+  }
+}
+```
 
 ## User Endpoints / 用户端点
 - `POST /api/users/login` - User login / 用户登录

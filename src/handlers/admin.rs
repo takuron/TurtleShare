@@ -47,6 +47,9 @@ pub struct AdminState {
     pub hashid_manager: Arc<HashIdManager>,
     pub rate_limiter: RateLimiter,
     pub pool: SqlitePool,
+    pub files_path: String,
+    pub max_upload_size_bytes: u64,
+    pub base_url: String,
 }
 
 /// Admin login handler.

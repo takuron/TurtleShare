@@ -52,12 +52,12 @@
 - [x] Implement DELETE /api/admin/articles/:id (delete article)
 
 ### File Management / 文件管理
-- [ ] Implement GET /api/admin/files (list all files)
-- [ ] Implement GET /api/admin/files/:id (get file metadata)
-- [ ] Implement POST /api/admin/files (upload file with UUID path)
-- [ ] Implement DELETE /api/admin/files/:id (delete file)
-- [ ] Add file size validation (max_upload_size_mb)
-- [ ] Generate UUID v4 for file directories
+- [x] Implement GET /api/admin/files (list all files)
+- [x] Implement GET /api/admin/files/:id (get file metadata)
+- [x] Implement POST /api/admin/files (upload file with UUID path)
+- [x] Implement DELETE /api/admin/files/:id (delete file)
+- [x] Add file size validation (max_upload_size_mb)
+- [x] Generate UUID v4 for file directories
 
 ## Phase 3: User Features / 用户功能
 
