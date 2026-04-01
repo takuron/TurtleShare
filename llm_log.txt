@@ -55,3 +55,4 @@
 [2026-04-01T15:54:13+08:00] 实现用户操作API：1) PUT /api/users/password 修改密码（需验证当前密码）；2) GET /api/users/subscriptions 查看自己的订阅时间区间（不显示备注）；3) GET /api/articles 列出可访问文章（基于等级访问控制）；4) GET /api/articles/:hash_id 获取文章详情（带访问控制）。同时为 AuthClaims 实现 FromRequestParts trait 以支持提取器使用。
 [2026-04-01T16:07:58+08:00] 修改用户文章访问权限控制：1) 访问权限基于文章发布时间的用户订阅等级而非当前等级；2) 列出文章时去除 content 和 is_public 字段，增加 accessible 标识；3) 公开文章即使没有完整访问权限也显示在列表中但 accessible=false；4) 获取文章详情时仅基于发布时间等级判断，is_public 不影响完整访问权限。
 [2026-04-01T16:15:37+08:00] 从用户文章列表 API 中移除 file_links 字段，仅保留 hash_id、title、cover_image、required_tier、accessible、created_at、updated_at。
+[2026-04-01T17:01:08+08:00] Added system tests for user API endpoints: user_auth.rs (17 tests), user_operations.rs (13 tests), user_articles.rs (23 tests). Total 53 new tests covering login, JWT auth, change password, get subscriptions, list/get articles with time-based tier access control, security tests.
