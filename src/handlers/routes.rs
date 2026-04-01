@@ -116,7 +116,7 @@ pub fn create_router(
         // 8. 保护的用户路由
         .nest("/api/users", user_protected)
         // 9. 公共路由
-        .merge(public::api::routes(config.site_info, pool, hashid_manager))
+        .merge(public::api::routes(config.siteinfo, pool, hashid_manager))
         .merge(super::static_files::routes(
             config.storage.static_path,
             config.storage.files_path,

@@ -18,7 +18,7 @@ pub struct Config {
     pub storage: StorageConfig,
     pub jwt: JwtConfig,
     pub hashid: HashIdConfig,
-    pub site_info: SiteInfoConfig,
+    pub siteinfo: SiteInfoConfig,
 }
 
 /// Administrator configuration.
@@ -86,17 +86,17 @@ fn default_hashid_min_length() -> usize {
     6
 }
 
-/// Public site information.
+/// Public site information as a free-form TOML table.
+///
+/// All key-value pairs under `[siteinfo]` in `config.toml` are loaded verbatim
+/// and forwarded to the public API. Any scalar, array, or nested table value
+/// is accepted, allowing arbitrary frontend configuration without code changes.
 //
-// // 公开站点信息。
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SiteInfoConfig {
-    pub name: String,
-    pub author: String,
-    pub sponsor_link: Option<String>,
-    pub header_image: Option<String>,
-    pub base_url: String,
-}
+// // 以自由格式 TOML 表存储的公开站点信息。
+// //
+// // `config.toml` 中 `[siteinfo]` 下的所有键值对将原样加载并转发至公开 API。
+// // 支持任意标量、数组或嵌套表值，无需改动代码即可适配不同前端配置。
+pub type SiteInfoConfig = toml::Table;
 
 impl Config {
     /// Loads the configuration from a specified TOML file.

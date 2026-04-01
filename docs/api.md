@@ -1079,9 +1079,11 @@ Health check endpoint for monitoring service availability.
 ---
 
 ### GET /api/public/site-info
-Returns public site information configured in `config.toml`.
+Returns all key-value pairs from the `[siteinfo]` section of `config.toml` as a JSON object.
+The response shape is fully controlled by the configuration file — any keys added to `[siteinfo]` appear in the response automatically.
 
-返回在 `config.toml` 中配置的公开站点信息。
+返回 `config.toml` 中 `[siteinfo]` 部分的所有键值对（序列化为 JSON 对象）。
+响应结构完全由配置文件决定——任何添加到 `[siteinfo]` 的键都会自动出现在响应中。
 
 **Authentication / 鉴权:** None required / 无需鉴权
 
@@ -1092,19 +1094,17 @@ Returns public site information configured in `config.toml`.
   "data": {
     "name": "TurtleShare",
     "author": "Admin",
-    "sponsor_link": "https://example.com/sponsor",
-    "header_image": "/files/uuid-456/header.jpg",
-    "base_url": "https://example.com"
+    "sponsor_link": "",
+    "header_image": "",
+    "theme_color": "#3498db"
   }
 }
 ```
 
 **Response Fields / 响应字段:**
-- `name` (string) - Site name from config / 来自配置的站点名称
-- `author` (string) - Site author from config / 来自配置的站点作者
-- `sponsor_link` (string|null) - Optional sponsor link / 可选的赞助链接
-- `header_image` (string|null) - Optional header image path / 可选的头图路径
-- `base_url` (string) - Site base URL / 站点基础URL
+The `data` object mirrors `[siteinfo]` in `config.toml` exactly. All TOML scalar types (string, integer, float, boolean), arrays, and inline tables are supported.
+
+`data` 对象与 `config.toml` 中的 `[siteinfo]` 完全对应。支持所有 TOML 标量类型（字符串、整数、浮点数、布尔值）、数组和内联表。
 
 ---
 

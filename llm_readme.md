@@ -95,7 +95,7 @@ See `docs/configuration.md` for complete configuration details.
 Key configuration sections:
 - `[server]` - Server settings including `base_url`
 - `[storage]` - File storage settings including `max_upload_size_mb` (default: 1024MB)
-- `[site_info]` - Site information (name, author, sponsor_link, header_image)
+- `[siteinfo]` - Free-form site information forwarded verbatim to the public API (any key-value pairs accepted)
 
 ### API Endpoints / API 端点
 See `docs/api.md` for complete API documentation.

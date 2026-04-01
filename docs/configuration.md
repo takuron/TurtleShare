@@ -28,11 +28,22 @@ rotation_days = 30  # Auto-rotate JWT secret every N days
 [hashid]
 min_length = 6  # Minimum length of encoded user IDs / 编码用户 ID 的最小长度
 
-[site_info]
-name = "TurtleShare"  # Site name / 网站名称
-author = "Admin"  # Site author / 网站作者
-sponsor_link = ""  # Sponsor link (optional) / 赞助链接（可选）
-header_image = ""  # Site header image path (optional) / 网站头图路径（可选）
+[siteinfo]
+# All keys under [siteinfo] are forwarded verbatim to GET /api/public/site-info.
+# Add any key-value pairs your frontend requires — no code changes needed.
+# Supported TOML value types: string, integer, float, boolean, array, inline table.
+#
+# [siteinfo] 下的所有键值对将原样转发至 GET /api/public/site-info。
+# 可根据前端需要添加任意键值，无需修改代码。
+# 支持的 TOML 值类型：字符串、整数、浮点数、布尔值、数组、内联表。
+name = "TurtleShare"
+author = "Admin"
+sponsor_link = ""
+header_image = ""
+# Example custom fields / 自定义字段示例:
+# theme_color = "#3498db"
+# show_upload_button = true
+# custom_footer = "Powered by TurtleShare"
 ```
 
 ## Config Structure / 配置结构
@@ -45,7 +56,7 @@ pub struct Config {
     pub storage: StorageConfig,
     pub jwt: JwtConfig,
     pub hashid: HashIdConfig,
-    pub site_info: SiteInfoConfig,
+    pub siteinfo: SiteInfoConfig,  // type alias for toml::Table
 }
 
 pub struct ServerConfig {
@@ -60,10 +71,10 @@ pub struct StorageConfig {
     pub static_path: String,  // Defaults to "./static"
 }
 
-pub struct SiteInfoConfig {
-    pub name: String,
-    pub author: String,
-    pub sponsor_link: Option<String>,
-    pub header_image: Option<String>,
-}
+// SiteInfoConfig is a type alias for toml::Table (free-form key-value store).
+// All entries are serialized as-is to JSON for the public site-info endpoint.
+//
+// SiteInfoConfig 是 toml::Table 的类型别名（自由格式键值存储）。
+// 所有条目将原样序列化为 JSON，通过公开站点信息端点返回。
+pub type SiteInfoConfig = toml::Table;
 ```

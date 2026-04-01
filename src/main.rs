@@ -75,7 +75,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // 4. 加载配置文件。
     let config = Config::load(&args.config)?;
-    tracing::info!("Successfully loaded configuration for: {}", config.site_info.name);
+    tracing::info!("Successfully loaded configuration for: {}", config.siteinfo.get("name").and_then(|v| v.as_str()).unwrap_or("TurtleShare"));
 
     // 5.1. 初始化数据库连接。
     let pool = db::init_db(&config.database.path, args.require_existing_db).await?;
