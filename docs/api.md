@@ -937,7 +937,7 @@ Get own subscriptions endpoint. Returns a list of subscription periods for the a
 
 ---
 
-### GET /api/articles
+### GET /api/users/articles
 List visible articles endpoint. Returns articles visible to the user based on their subscription tier at article publish time.
 
 列出可见文章端点。返回用户根据文章发布时的订阅等级可见的文章。
@@ -988,7 +988,7 @@ List visible articles endpoint. Returns articles visible to the user based on th
 
 ---
 
-### GET /api/articles/:hash_id
+### GET /api/users/articles/:hash_id
 Get article detail endpoint with time-based access control. Returns full article content only if user had sufficient tier at article publish time.
 
 获取文章详情端点，带基于时间的访问控制。仅当用户在文章发布时有足够等级时返回完整文章内容。

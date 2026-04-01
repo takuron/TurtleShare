@@ -23,7 +23,7 @@ rotation_days = 30
 [hashid]
 min_length = 6
 
-[site_info]
+[siteinfo]
 name = "TurtleShare"
 author = "Admin"
 sponsor_link = ""
