@@ -353,9 +353,13 @@ pub struct TestConfig {
     pub jwt_expiry_hours: u64,
     pub jwt_rotation_days: u64,
     pub hashid_min_length: usize,
-    pub site_name: String,
-    pub site_author: String,
     pub max_upload_size_mb: u64,
+    /// Raw TOML content for the `[siteinfo]` section.
+    /// If `None`, a default section with `name` and `author` is generated.
+    //
+    // // `[siteinfo]` 部分的原始 TOML 内容。
+    // // 如果为 `None`，则生成包含 `name` 和 `author` 的默认部分。
+    pub siteinfo_toml: Option<String>,
 }
 
 impl Default for TestConfig {
@@ -368,9 +372,8 @@ impl Default for TestConfig {
             jwt_expiry_hours: 24,
             jwt_rotation_days: 30,
             hashid_min_length: 6,
-            site_name: "TurtleShare-Test".to_string(),
-            site_author: "TestAdmin".to_string(),
             max_upload_size_mb: 10,
+            siteinfo_toml: None,
         }
     }
 }
@@ -390,6 +393,19 @@ impl TestConfig {
         let db_str = db_path.to_str().unwrap().replace('\\', "/");
         let files_str = files_path.to_str().unwrap().replace('\\', "/");
         let static_str = static_path.to_str().unwrap().replace('\\', "/");
+
+        // 使用自定义 siteinfo 或默认值
+        let siteinfo_section = match &self.siteinfo_toml {
+            Some(custom) => custom.clone(),
+            None => format!(
+                r#"[siteinfo]
+name = "TurtleShare-Test"
+author = "TestAdmin"
+sponsor_link = ""
+header_image = ""
+"#,
+            ),
+        };
 
         format!(
             r#"[admin]
@@ -417,12 +433,7 @@ rotation_days = {jwt_rotation_days}
 [hashid]
 min_length = {hashid_min_length}
 
-[site_info]
-name = "{site_name}"
-author = "{site_author}"
-sponsor_link = ""
-header_image = ""
-base_url = "http://127.0.0.1:{port}"
+{siteinfo_section}
 "#,
             admin_username = self.admin_username,
             admin_password_hash = self.admin_password_hash,
@@ -435,8 +446,7 @@ base_url = "http://127.0.0.1:{port}"
             jwt_expiry_hours = self.jwt_expiry_hours,
             jwt_rotation_days = self.jwt_rotation_days,
             hashid_min_length = self.hashid_min_length,
-            site_name = self.site_name,
-            site_author = self.site_author,
+            siteinfo_section = siteinfo_section,
         )
     }
 }
