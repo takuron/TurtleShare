@@ -75,10 +75,10 @@
 - [x] Add tier-based access control logic
 
 ### Public Endpoints / 公开端点
-- [ ] Implement GET /api/public/articles (list public articles with title+cover+tier)
-- [ ] Implement GET /api/public/articles/:id (get public article, show content if tier=0)
+- [x] Implement GET /api/public/articles (list public articles with title+cover+tier)
+- [x] Implement GET /api/public/articles/:id (get public article, show content if tier=0)
 - [x] Implement GET /api/public/site-info (return site configuration)
-- [ ] Implement GET /files/:uuid/:filename (serve files without auth)
+- [x] Implement GET /files/:uuid/:filename (serve files without auth)
 
 ## Phase 4: Polish / 完善
 

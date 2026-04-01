@@ -1108,11 +1108,139 @@ Returns public site information configured in `config.toml`.
 
 ---
 
-- `GET /api/public/articles` - List public articles / 列出公开文章
-- `GET /api/public/articles/:id` - Get public article detail / 获取公开文章详情
+### GET /api/public/articles
+List public articles endpoint. Returns articles that are publicly listed (is_public = true).
+The accessible field indicates if the content can be fully accessed by unauthenticated users.
+
+列出公开文章端点。返回公开列出的文章（is_public = true）。
+accessible 字段指示未认证用户是否可以完整访问内容。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "hash_id": "abc123",
+      "title": "Free Article",
+      "cover_image": "/files/uuid/cover.jpg",
+      "required_tier": 0,
+      "accessible": true,
+      "created_at": 1700000000,
+      "updated_at": 1700000000
+    },
+    {
+      "hash_id": "def456",
+      "title": "Premium Preview",
+      "cover_image": null,
+      "required_tier": 2,
+      "accessible": false,
+      "created_at": 1690000000,
+      "updated_at": 1690000000
+    }
+  ]
+}
+```
+
+**Response Fields / 响应字段:**
+- `hash_id` (string) - Article hash ID / 文章 Hash ID
+- `title` (string) - Article title / 文章标题
+- `cover_image` (string|null) - Cover image path / 封面图片路径
+- `required_tier` (integer) - Minimum tier required to fully access / 完整访问所需的最低等级
+- `accessible` (boolean) - Whether unauthenticated users can fully access the article content / 未认证用户是否可以完整访问文章内容
+- `created_at` (integer) - Creation timestamp / 创建时间戳
+- `updated_at` (integer) - Last update timestamp / 最后更新时间戳
+
+**Notes / 注意事项:**
+- The `content`, `is_public`, and `file_links` fields are intentionally excluded / `content`、`is_public` 和 `file_links` 字段被有意排除
+- Results are ordered by `created_at` descending / 结果按 `created_at` 降序排列
+- `accessible = true` when `required_tier = 0`, meaning full content is available via detail endpoint / 当 `required_tier = 0` 时 `accessible = true`，表示可通过详情端点获取完整内容
+- `accessible = false` when `required_tier > 0`, meaning detail endpoint will return 403 Forbidden / 当 `required_tier > 0` 时 `accessible = false`，表示详情端点将返回 403 Forbidden
+
+---
+
+### GET /api/public/articles/:hash_id
+Get public article detail endpoint. Returns full article content only if required_tier = 0.
+Returns 403 Forbidden if required_tier > 0.
+
+获取公开文章详情端点。仅当 required_tier = 0 时返回完整文章内容。
+如果 required_tier > 0，返回 403 Forbidden。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string, required) - Article hash ID / 文章 Hash ID
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "hash_id": "abc123",
+    "title": "Free Article",
+    "cover_image": "/files/uuid/cover.jpg",
+    "content": "Full article content here...",
+    "required_tier": 0,
+    "is_public": true,
+    "file_links": [
+      {
+        "name": "document.pdf",
+        "url": "https://example.com/files/uuid/document.pdf"
+      }
+    ],
+    "created_at": 1700000000,
+    "updated_at": 1700000000
+  }
+}
+```
+
+**Response Fields / 响应字段:**
+- `hash_id` (string) - Article hash ID / 文章 Hash ID
+- `title` (string) - Article title / 文章标题
+- `cover_image` (string|null) - Cover image path / 封面图片路径
+- `content` (string) - Article content (Markdown) / 文章内容（Markdown）
+- `required_tier` (integer) - Minimum tier required to access / 访问所需的最低等级
+- `is_public` (boolean) - Whether article is publicly listed / 文章是否公开列出
+- `file_links` (array) - File links with name and url / 包含名称和链接的文件链接数组
+- `created_at` (integer) - Creation timestamp / 创建时间戳
+- `updated_at` (integer) - Last update timestamp / 最后更新时间戳
+
+**Error Responses / 错误响应:**
+
+`404 Not Found` - Article does not exist or is not public (is_public = false) / 文章不存在或不是公开的（is_public = false）
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Article not found"
+  }
+}
+```
+
+`403 Forbidden` - Article requires subscription (required_tier > 0) / 文章需要订阅（required_tier > 0）
+```json
+{
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Insufficient subscription tier to access this article"
+  }
+}
+```
+
+**Notes / 注意事项:**
+- Only public articles (is_public = true) can be accessed via this endpoint / 只有公开文章（is_public = true）可通过此端点访问
+- Full content is only returned when required_tier = 0 / 仅当 required_tier = 0 时返回完整内容
+- Articles with required_tier > 0 return 403 Forbidden even if is_public = true / 即使 is_public = true，required_tier > 0 的文章返回 403 Forbidden
+- Non-public articles (is_public = false) return 404 / 非公开文章（is_public = false）返回 404
+
+---
 
 ## Static File Routes / 静态文件路由
-- `GET /files/*` - Serve uploaded files / 提供上传的文件
+- `GET /files/*` - Serve uploaded files without authentication / 无需认证提供上传的文件
 - `GET /*` - Serve frontend static files (fallback for SPA) / 提供前端静态文件（SPA回退）
 
 ## JSON Response Format / JSON 响应格式
