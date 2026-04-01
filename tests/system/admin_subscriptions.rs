@@ -196,6 +196,56 @@ async fn create_subscription_negative_tier() {
     assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
 }
 
+/// tier 超过 255 应返回 400。
+#[tokio::test]
+async fn create_subscription_tier_overflow() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+    let user_hash_id = create_test_user(&server, &token, "sub_overflow").await;
+
+    // tier = 256 超出上限
+    let resp = server
+        .post_json_with_token(
+            &format!("/api/admin/users/{}/subscriptions", user_hash_id),
+            &json!({
+                "tier": 256,
+                "start_date": 1710928800,
+                "end_date": 1713520800
+            }),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 400);
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
+    assert!(body["error"]["message"].as_str().unwrap().contains("255"));
+}
+
+/// tier = 255 应成功（边界值）。
+#[tokio::test]
+async fn create_subscription_tier_max_boundary() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+    let user_hash_id = create_test_user(&server, &token, "sub_max_tier").await;
+
+    let resp = server
+        .post_json_with_token(
+            &format!("/api/admin/users/{}/subscriptions", user_hash_id),
+            &json!({
+                "tier": 255,
+                "start_date": 1710928800,
+                "end_date": 1713520800
+            }),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 201);
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["data"]["tier"], 255);
+}
+
 /// 为不存在的用户创建订阅应返回 404。
 #[tokio::test]
 async fn create_subscription_user_not_found() {
@@ -683,6 +733,67 @@ async fn update_subscription_negative_tier() {
     assert_eq!(resp.status(), 400);
     let body: Value = resp.json().await.unwrap();
     assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
+}
+
+/// 更新时 tier 超过 255 应返回 400。
+#[tokio::test]
+async fn update_subscription_tier_overflow() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+    let user_hash_id = create_test_user(&server, &token, "sub_upd_overflow").await;
+    let sub_hash_id = create_test_subscription(
+        &server,
+        &token,
+        &user_hash_id,
+        1,
+        1710928800,
+        1713520800,
+        None,
+    )
+    .await;
+
+    let resp = server
+        .put_json_with_token(
+            &format!("/api/admin/subscriptions/{}", sub_hash_id),
+            &json!({"tier": 256}),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 400);
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
+    assert!(body["error"]["message"].as_str().unwrap().contains("255"));
+}
+
+/// 更新时 tier = 255 应成功（边界值）。
+#[tokio::test]
+async fn update_subscription_tier_max_boundary() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+    let user_hash_id = create_test_user(&server, &token, "sub_upd_max").await;
+    let sub_hash_id = create_test_subscription(
+        &server,
+        &token,
+        &user_hash_id,
+        1,
+        1710928800,
+        1713520800,
+        None,
+    )
+    .await;
+
+    let resp = server
+        .put_json_with_token(
+            &format!("/api/admin/subscriptions/{}", sub_hash_id),
+            &json!({"tier": 255}),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 200);
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["data"]["tier"], 255);
 }
 
 /// 更新不存在的订阅应返回 404。

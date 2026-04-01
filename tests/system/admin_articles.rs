@@ -169,6 +169,55 @@ async fn create_article_negative_tier() {
     assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
 }
 
+/// required_tier 超过 255 应返回 400。
+#[tokio::test]
+async fn create_article_tier_overflow() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+
+    let resp = server
+        .post_json_with_token(
+            "/api/admin/articles",
+            &json!({
+                "title": "Overflow Tier",
+                "content": "Content",
+                "required_tier": 256,
+                "is_public": true
+            }),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 400);
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
+    assert!(body["error"]["message"].as_str().unwrap().contains("255"));
+}
+
+/// required_tier = 255 应成功（边界值）。
+#[tokio::test]
+async fn create_article_tier_max_boundary() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+
+    let resp = server
+        .post_json_with_token(
+            "/api/admin/articles",
+            &json!({
+                "title": "Max Tier",
+                "content": "Content",
+                "required_tier": 255,
+                "is_public": true
+            }),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 201);
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["data"]["required_tier"], 255);
+}
+
 /// 未认证创建文章应返回 401。
 #[tokio::test]
 async fn create_article_without_auth() {
@@ -574,6 +623,47 @@ async fn update_article_negative_tier() {
     assert_eq!(resp.status(), 400);
     let body: Value = resp.json().await.unwrap();
     assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
+}
+
+/// 更新时 required_tier 超过 255 应返回 400。
+#[tokio::test]
+async fn update_article_tier_overflow() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+    let hash_id = create_test_article(&server, &token, "Overflow Update").await;
+
+    let resp = server
+        .put_json_with_token(
+            &format!("/api/admin/articles/{}", hash_id),
+            &json!({"required_tier": 256}),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 400);
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
+    assert!(body["error"]["message"].as_str().unwrap().contains("255"));
+}
+
+/// 更新时 required_tier = 255 应成功（边界值）。
+#[tokio::test]
+async fn update_article_tier_max_boundary() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+    let hash_id = create_test_article(&server, &token, "Max Tier Update").await;
+
+    let resp = server
+        .put_json_with_token(
+            &format!("/api/admin/articles/{}", hash_id),
+            &json!({"required_tier": 255}),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 200);
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["data"]["required_tier"], 255);
 }
 
 /// 更新不存在的文章应返回 404。

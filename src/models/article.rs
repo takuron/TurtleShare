@@ -128,7 +128,7 @@ pub struct CreateArticleRequest {
     pub cover_image: Option<String>,
     /// Article content (Markdown) / 文章内容（Markdown）
     pub content: String,
-    /// Minimum subscription tier required to access / 访问所需的最低订阅等级
+    /// Minimum subscription tier required to access (0-255) / 访问所需的最低订阅等级（0-255）
     pub required_tier: i32,
     /// Whether the article is publicly listed / 文章是否公开列出
     pub is_public: bool,

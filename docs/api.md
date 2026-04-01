@@ -292,14 +292,14 @@ Add a new subscription period for a user.
 ```
 
 **Request Fields / 请求字段:**
-- `tier` (integer, required) - Subscription tier level (must be >= 0) / 订阅等级（必须 >= 0）
+- `tier` (integer, required) - Subscription tier level (must be 0-255) / 订阅等级（必须为 0-255）
 - `start_date` (integer, required) - Start date as Unix timestamp / 开始日期，Unix 时间戳
 - `end_date` (integer, required) - End date as Unix timestamp / 结束日期，Unix 时间戳
 - `note` (string|null, optional) - Admin-only note for this subscription / 仅管理员可见的订阅备注
 
 **Validation Rules / 验证规则:**
 - `start_date` must be before `end_date` / `start_date` 必须早于 `end_date`
-- `tier` must be non-negative / `tier` 必须为非负数
+- `tier` must be between 0 and 255 / `tier` 必须在 0 到 255 之间
 
 **Success Response / 成功响应:** `201 Created`
 ```json
@@ -350,7 +350,7 @@ Update an existing subscription. Only the provided fields are updated.
 
 **Validation Rules / 验证规则:**
 - After update, `start_date` must be before `end_date` / 更新后 `start_date` 必须早于 `end_date`
-- `tier` must be non-negative if provided / 如果提供，`tier` 必须为非负数
+- `tier` must be between 0 and 255 if provided / 如果提供，`tier` 必须在 0 到 255 之间
 
 **Success Response / 成功响应:** `200 OK`
 ```json
@@ -507,13 +507,13 @@ Create a new article.
 - `title` (string, required) - Article title (must not be empty) / 文章标题（不能为空）
 - `cover_image` (string|null, optional) - Cover image path / 封面图片路径
 - `content` (string, required) - Article content (Markdown) / 文章内容（Markdown）
-- `required_tier` (integer, required) - Minimum subscription tier required (must be >= 0) / 访问所需的最低订阅等级（必须 >= 0）
+- `required_tier` (integer, required) - Minimum subscription tier required (must be 0-255) / 访问所需的最低订阅等级（必须为 0-255）
 - `is_public` (boolean, required) - Whether the article is publicly listed / 文章是否公开列出
 - `file_links` (array, optional, default `[]`) - Array of file link objects, each with `name` (string) and `url` (string, must be an absolute URL starting with `http://` or `https://`) / 文件链接对象数组，每个包含 `name`（字符串）和 `url`（字符串，必须是以 `http://` 或 `https://` 开头的绝对链接），默认为空数组
 
 **Validation Rules / 验证规则:**
 - `title` must not be empty or whitespace-only / `title` 不能为空或仅包含空白字符
-- `required_tier` must be non-negative / `required_tier` 必须为非负数
+- `required_tier` must be between 0 and 255 / `required_tier` 必须在 0 到 255 之间
 
 **Success Response / 成功响应:** `201 Created`
 ```json
@@ -570,7 +570,7 @@ Update an existing article. Only the provided fields are updated. The `updated_a
 
 **Validation Rules / 验证规则:**
 - If provided, `title` must not be empty or whitespace-only / 如果提供，`title` 不能为空或仅包含空白字符
-- If provided, `required_tier` must be non-negative / 如果提供，`required_tier` 必须为非负数
+- If provided, `required_tier` must be between 0 and 255 / 如果提供，`required_tier` 必须在 0 到 255 之间
 
 **Success Response / 成功响应:** `200 OK`
 ```json

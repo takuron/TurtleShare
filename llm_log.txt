@@ -58,3 +58,6 @@
 [2026-04-01T17:01:08+08:00] Added system tests for user API endpoints: user_auth.rs (17 tests), user_operations.rs (13 tests), user_articles.rs (23 tests). Total 53 new tests covering login, JWT auth, change password, get subscriptions, list/get articles with time-based tier access control, security tests.
 [2026-04-01T17:19:59+08:00] 实现公开文章端点: GET /api/public/articles (列出公开文章) 和 GET /api/public/articles/:hash_id (获取公开文章详情，tier=0 可看完整内容)
 [2026-04-01T17:26:51+08:00] 修正公开文章API: 列表仅显示is_public=true的文章，添加accessible字段控制访问权限；详情端点根据accessible返回完整内容或403 Forbidden
+[2026-04-01T17:37:07+08:00] Added system tests for public article API endpoints (GET /api/public/articles, GET /api/public/articles/:hash_id) - 21 tests covering list/detail, visibility, access control, auth-free access, update behavior, and security.
+[2026-04-01T17:45:16+08:00] 限制订阅等级(tier/required_tier)范围为0-255，更新了subscriptions和articles的创建/更新验证逻辑，同步更新了模型注释和API文档。
+[2026-04-01T17:51:00+08:00] 为订阅和文章的tier上限溢出(>255)及边界值(=255)添加了8个系统测试，全部201个测试通过。

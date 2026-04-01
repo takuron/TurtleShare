@@ -95,10 +95,10 @@ pub async fn create_subscription(
         ));
     }
 
-    // 4. 验证等级
-    if req.tier < 0 {
+    // 4. 验证等级范围（0-255）
+    if req.tier < 0 || req.tier > 255 {
         return Err(AppError::ValidationError(
-            "tier must be non-negative".to_string(),
+            "tier must be between 0 and 255".to_string(),
         ));
     }
 
@@ -168,9 +168,9 @@ pub async fn update_subscription(
 
     // 3. 更新提供的字段
     if let Some(tier) = req.tier {
-        if tier < 0 {
+        if tier < 0 || tier > 255 {
             return Err(AppError::ValidationError(
-                "tier must be non-negative".to_string(),
+                "tier must be between 0 and 255".to_string(),
             ));
         }
         subscription.tier = tier;

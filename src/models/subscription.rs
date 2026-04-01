@@ -94,8 +94,8 @@ impl UserSubscription {
 // // 用于向用户添加订阅时段。
 #[derive(Debug, Deserialize)]
 pub struct CreateSubscriptionRequest {
-    /// The subscription tier level (e.g., 0, 1, 2, 3)
-    /// / 订阅等级（例如 0, 1, 2, 3）
+    /// The subscription tier level (0-255)
+    /// / 订阅等级（0-255）
     pub tier: i32,
 
     /// Start date as Unix timestamp (seconds since epoch)

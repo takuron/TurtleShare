@@ -87,10 +87,10 @@ pub async fn create_article(
     State(state): State<AdminState>,
     Json(req): Json<CreateArticleRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // 1. 验证 required_tier 非负
-    if req.required_tier < 0 {
+    // 1. 验证 required_tier 范围（0-255）
+    if req.required_tier < 0 || req.required_tier > 255 {
         return Err(AppError::ValidationError(
-            "required_tier must be non-negative".to_string(),
+            "required_tier must be between 0 and 255".to_string(),
         ));
     }
 
@@ -192,9 +192,9 @@ pub async fn update_article(
         article.content = content;
     }
     if let Some(required_tier) = req.required_tier {
-        if required_tier < 0 {
+        if required_tier < 0 || required_tier > 255 {
             return Err(AppError::ValidationError(
-                "required_tier must be non-negative".to_string(),
+                "required_tier must be between 0 and 255".to_string(),
             ));
         }
         article.required_tier = required_tier;
