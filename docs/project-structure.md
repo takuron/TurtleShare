@@ -29,7 +29,10 @@ src/
 │   │   ├── articles.rs  # Article CRUD / 文章CRUD ✅
 │   │   └── files.rs     # File upload/management / 文件上传/管理 ✅
 │   ├── user/            # User endpoints (require user JWT) / 用户端点（需用户JWT）
-│   │   └── mod.rs       # User module placeholder / 用户模块占位 ⏳
+│   │   ├── mod.rs       # User module exports / 用户模块导出 ✅
+│   │   ├── auth.rs      # User login, UserState / 用户登录、UserState ✅
+│   │   ├── operations.rs # Password change, own subscriptions / 修改密码、查看订阅 ✅
+│   │   └── articles.rs  # Article access with tier control / 带等级控制的文章访问 ✅
 │   └── public/          # Public API endpoints (no auth) / 公开API端点（无需鉴权）
 │       ├── mod.rs       # Public module exports / 公开模块导出 ✅
 │       └── api.rs       # Health check, site info / 健康检查、站点信息 ✅

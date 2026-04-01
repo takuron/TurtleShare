@@ -770,10 +770,280 @@ Delete a file from the database and disk.
 ```
 
 ## User Endpoints / 用户端点
-- `POST /api/users/login` - User login / 用户登录
-- `PUT /api/users/password` - Change password / 修改密码
-- `GET /api/articles` - List accessible articles / 列出可访问文章
-- `GET /api/articles/:id` - Get article detail / 获取文章详情
+
+### POST /api/users/login
+User login endpoint. Validates credentials against the database and returns a JWT token.
+
+用户登录端点。根据数据库验证凭据并返回 JWT 令牌。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Request Body / 请求体:**
+```json
+{
+  "username": "user1",
+  "password": "user_password"
+}
+```
+
+**Request Fields / 请求字段:**
+- `username` (string, required) - Username / 用户名
+- `password` (string, required) - Password / 密码
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs..."
+  }
+}
+```
+
+**Response Fields / 响应字段:**
+- `token` (string) - JWT token for authenticated user / 已认证用户的 JWT 令牌
+
+**Error Responses / 错误响应:**
+
+`400 Bad Request` - Invalid JSON format / JSON 格式无效
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid JSON format"
+  }
+}
+```
+
+`401 Unauthorized` - Invalid credentials / 凭据无效
+```json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid credentials"
+  }
+}
+```
+
+`429 Too Many Requests` - Rate limit exceeded / 超过限流阈值
+```json
+{
+  "success": false,
+  "error": {
+    "code": "TOO_MANY_REQUESTS",
+    "message": "Rate limit exceeded"
+  }
+}
+```
+
+**Notes / 注意事项:**
+- Rate limit: 10 requests per 5 minutes per IP / 限流：每个 IP 每 5 分钟最多 10 次请求
+- The JWT token's `sub` field is in format `user:<user_hashid>` / JWT 令牌的 `sub` 字段格式为 `user:<用户HashID>`
+- Token should be included in `Authorization: Bearer <token>` header for protected endpoints / 令牌应在受保护端点的 `Authorization: Bearer <token>` 头中包含
+
+---
+
+### PUT /api/users/password
+Change password endpoint. Allows an authenticated user to change their password.
+
+修改密码端点。允许已认证用户修改密码。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Request Body / 请求体:**
+```json
+{
+  "current_password": "old_password",
+  "new_password": "new_secure_password"
+}
+```
+
+**Request Fields / 请求字段:**
+- `current_password` (string, required) - Current password for verification / 用于验证的当前密码
+- `new_password` (string, required) - New password to set / 要设置的新密码
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Password changed successfully"
+  }
+}
+```
+
+**Error Responses / 错误响应:**
+
+`400 Bad Request` - New password is empty / 新密码为空
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "new_password must not be empty"
+  }
+}
+```
+
+`401 Unauthorized` - Current password is incorrect / 当前密码不正确
+```json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Current password is incorrect"
+  }
+}
+```
+
+---
+
+### GET /api/users/subscriptions
+Get own subscriptions endpoint. Returns a list of subscription periods for the authenticated user. The note field is excluded as it is admin-only information.
+
+获取自己的订阅端点。返回已认证用户的订阅时段列表。备注字段被排除，因为它是仅管理员可见的信息。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "tier": 2,
+      "start_date": 1700000000,
+      "end_date": 1731542400
+    },
+    {
+      "tier": 1,
+      "start_date": 1690000000,
+      "end_date": 1699999999
+    }
+  ]
+}
+```
+
+**Response Fields / 响应字段:**
+- `tier` (integer) - Subscription tier level / 订阅等级
+- `start_date` (integer) - Start date as Unix timestamp / 开始日期，Unix 时间戳
+- `end_date` (integer) - End date as Unix timestamp / 结束日期，Unix 时间戳
+
+**Notes / 注意事项:**
+- Results are ordered by `start_date` descending / 结果按 `start_date` 降序排列
+- The `note` field is intentionally excluded for user privacy / `note` 字段为保护用户隐私而被排除
+
+---
+
+### GET /api/articles
+List visible articles endpoint. Returns articles visible to the user based on their subscription tier at article publish time.
+
+列出可见文章端点。返回用户根据文章发布时的订阅等级可见的文章。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "hash_id": "abc123",
+      "title": "Premium Article",
+      "cover_image": "/files/uuid/cover.jpg",
+      "required_tier": 2,
+      "accessible": true,
+      "created_at": 1700000000,
+      "updated_at": 1700000000
+    },
+    {
+      "hash_id": "def456",
+      "title": "Public Article",
+      "cover_image": null,
+      "required_tier": 1,
+      "accessible": false,
+      "created_at": 1690000000,
+      "updated_at": 1690000000
+    }
+  ]
+}
+```
+
+**Response Fields / 响应字段:**
+- `hash_id` (string) - Article hash ID / 文章 Hash ID
+- `title` (string) - Article title / 文章标题
+- `cover_image` (string|null) - Cover image path / 封面图片路径
+- `required_tier` (integer) - Minimum tier required to fully access / 完整访问所需的最低等级
+- `accessible` (boolean) - Whether user can fully access the article content / 用户是否可以完整访问文章内容
+- `created_at` (integer) - Creation timestamp / 创建时间戳
+- `updated_at` (integer) - Last update timestamp / 最后更新时间戳
+
+**Notes / 注意事项:**
+- An article is visible if user had sufficient tier at publish time (`accessible = true`) OR article is public (`accessible = false`) / 文章在用户发布时有足够等级（`accessible = true`）或文章是公开的（`accessible = false`）时可见
+- The `content`, `is_public`, and `file_links` fields are intentionally excluded / `content`、`is_public` 和 `file_links` 字段被有意排除
+- Access is determined by user's tier at article's `created_at` time, not current tier / 访问权限由用户在文章 `created_at` 时间的等级决定，而非当前等级
+- Results are ordered by `created_at` descending / 结果按 `created_at` 降序排列
+
+---
+
+### GET /api/articles/:hash_id
+Get article detail endpoint with time-based access control. Returns full article content only if user had sufficient tier at article publish time.
+
+获取文章详情端点，带基于时间的访问控制。仅当用户在文章发布时有足够等级时返回完整文章内容。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Path Parameters / 路径参数:**
+- `hash_id` (string, required) - Article hash ID / 文章 Hash ID
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "hash_id": "abc123",
+    "title": "Premium Article",
+    "cover_image": "/files/uuid/cover.jpg",
+    "content": "Premium content here...",
+    "required_tier": 2,
+    "is_public": false,
+    "file_links": [],
+    "created_at": 1700000000,
+    "updated_at": 1700000000
+  }
+}
+```
+
+**Error Responses / 错误响应:**
+
+`404 Not Found` - Article does not exist / 文章不存在
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Article not found"
+  }
+}
+```
+
+`403 Forbidden` - Insufficient subscription tier at article publish time / 文章发布时订阅等级不足
+```json
+{
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Insufficient subscription tier to access this article"
+  }
+}
+```
+
+**Notes / 注意事项:**
+- Access is determined solely by user's tier at article's `created_at` time / 访问权限仅由用户在文章 `created_at` 时间的等级决定
+- Public status (`is_public`) does NOT grant access to full article content / 公开状态（`is_public`）不授予完整文章内容的访问权限
+- Even if an article appears in the list with `accessible: false`, requesting its detail will return 403 / 即使文章在列表中显示为 `accessible: false`，请求其详情将返回 403
 
 ## Public Endpoints / 公开端点
 

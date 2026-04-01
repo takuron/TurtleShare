@@ -62,16 +62,17 @@
 ## Phase 3: User Features / 用户功能
 
 ### User Authentication / 用户认证
-- [ ] Implement POST /api/users/login endpoint
-- [ ] Validate credentials against database
-- [ ] Return JWT token with role: user, user_id
-- [ ] Add user authentication middleware
+- [x] Implement POST /api/users/login endpoint
+- [x] Validate credentials against database
+- [x] Return JWT token with role: user, user_id
+- [x] Add user authentication middleware
 
 ### User Operations / 用户操作
-- [ ] Implement PUT /api/users/password (change password)
-- [ ] Implement GET /api/articles (list accessible articles based on tier)
-- [ ] Implement GET /api/articles/:id (get article detail with access control)
-- [ ] Add tier-based access control logic
+- [x] Implement PUT /api/users/password (change password)
+- [x] Implement GET /api/users/subscriptions (view own subscription periods without note)
+- [x] Implement GET /api/articles (list accessible articles based on tier)
+- [x] Implement GET /api/articles/:id (get article detail with access control)
+- [x] Add tier-based access control logic
 
 ### Public Endpoints / 公开端点
 - [ ] Implement GET /api/public/articles (list public articles with title+cover+tier)

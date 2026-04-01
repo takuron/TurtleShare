@@ -1,17 +1,33 @@
+use crate::error::AppError;
+use crate::utils::jwt::{Claims, JwtManager};
 use axum::{
-    extract::{Request, State},
+    extract::{FromRequestParts, Request, State},
+    http::request::Parts,
     middleware::Next,
     response::Response,
 };
 use std::sync::Arc;
-use crate::utils::jwt::{JwtManager, Claims};
-use crate::error::AppError;
 
 /// Extension type to store authenticated claims in request.
 //
 // // 扩展类型，用于在请求中存储已认证的声明。
 #[derive(Clone)]
 pub struct AuthClaims(pub Claims);
+
+impl<S> FromRequestParts<S> for AuthClaims
+where
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        parts
+            .extensions
+            .get::<AuthClaims>()
+            .cloned()
+            .ok_or_else(|| AppError::Unauthorized("Missing authentication claims".to_string()))
+    }
+}
 
 /// Admin authentication middleware.
 ///
@@ -26,7 +42,8 @@ pub async fn require_admin(
     next: Next,
 ) -> Result<Response, AppError> {
     // 1. 提取 Authorization 头
-    let auth_header = req.headers()
+    let auth_header = req
+        .headers()
         .get("Authorization")
         .and_then(|h| h.to_str().ok())
         .ok_or_else(|| AppError::Unauthorized("Missing authorization header".to_string()))?;
@@ -63,7 +80,8 @@ pub async fn require_user(
     next: Next,
 ) -> Result<Response, AppError> {
     // 1. 提取 Authorization 头
-    let auth_header = req.headers()
+    let auth_header = req
+        .headers()
         .get("Authorization")
         .and_then(|h| h.to_str().ok())
         .ok_or_else(|| AppError::Unauthorized("Missing authorization header".to_string()))?;

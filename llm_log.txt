@@ -50,3 +50,8 @@
 [2026-03-31T17:21:51+08:00] Added 19 integration tests for admin file management endpoints (upload, list, get, delete). Added multipart feature to reqwest, post_multipart_with_token helper to TestServer. Fixed path traversal vulnerability in upload handler by sanitizing filenames.
 [2026-03-31T17:58:10+08:00] Refactored handlers/ into admin/, public/, user/ subdirectories for better decoupling: admin/ contains auth.rs, users.rs, subscriptions.rs, articles.rs, files.rs; public/ contains api.rs, static_files.rs; user/ is a placeholder. Updated routes.rs and project-structure.md.
 [2026-03-31T18:02:03+08:00] Moved static_files.rs from handlers/public/ to handlers/ root level, updated mod.rs, routes.rs, and project-structure.md.
+[2026-04-01T15:34:17+08:00] 实现普通用户登录验证：创建 user/auth.rs 处理器，实现 POST /api/users/login 端点，支持数据库凭据验证和 JWT 令牌生成（sub 格式为 user:<user_hashid>），添加用户认证中间件路由。
+[2026-04-01T15:38:01+08:00] 修复路由问题：移除空的 user_protected 路由器以避免 route_layer panic。
+[2026-04-01T15:54:13+08:00] 实现用户操作API：1) PUT /api/users/password 修改密码（需验证当前密码）；2) GET /api/users/subscriptions 查看自己的订阅时间区间（不显示备注）；3) GET /api/articles 列出可访问文章（基于等级访问控制）；4) GET /api/articles/:hash_id 获取文章详情（带访问控制）。同时为 AuthClaims 实现 FromRequestParts trait 以支持提取器使用。
+[2026-04-01T16:07:58+08:00] 修改用户文章访问权限控制：1) 访问权限基于文章发布时间的用户订阅等级而非当前等级；2) 列出文章时去除 content 和 is_public 字段，增加 accessible 标识；3) 公开文章即使没有完整访问权限也显示在列表中但 accessible=false；4) 获取文章详情时仅基于发布时间等级判断，is_public 不影响完整访问权限。
+[2026-04-01T16:15:37+08:00] 从用户文章列表 API 中移除 file_links 字段，仅保留 hash_id、title、cover_image、required_tier、accessible、created_at、updated_at。
