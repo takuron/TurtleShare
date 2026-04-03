@@ -4,13 +4,13 @@
 
 use super::auth::AdminState;
 use crate::error::AppError;
-use crate::handlers::common::ApiResponse;
+use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery};
 use crate::models::article::{
-    Article, ArticleResponse, CreateArticleRequest, UpdateArticleRequest, serialize_file_links,
+    Article, CreateArticleRequest, UpdateArticleRequest, serialize_file_links,
 };
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
 };
@@ -318,5 +318,73 @@ pub async fn delete_article(
             "deleted": true,
             "hash_id": hash_id
         }),
+    }))
+}
+
+/// Get total pages for articles.
+///
+/// Returns the total number of pages and items based on page_size.
+//
+// // 获取文章总页数。
+// //
+// // 基于 page_size 返回总页数和总项目数。
+pub async fn get_articles_page_count(
+    State(state): State<AdminState>,
+    Query(query): Query<PaginationQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_size = query.page_size.unwrap_or(20).max(1);
+
+    let total_items: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM articles")
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let total_items = total_items.0 as u32;
+    let total_pages = (total_items + page_size - 1) / page_size;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: PageCountResponse {
+            total_pages,
+            total_items,
+        },
+    }))
+}
+
+/// List articles paginated.
+///
+/// Returns a specific page of articles based on page and page_size.
+/// Excludes content and file_links from the response.
+//
+// // 分页列出文章。
+// //
+// // 基于 page 和 page_size 返回特定页的文章。
+// // 响应中不包含 content 和 file_links。
+pub async fn list_articles_paginated(
+    State(state): State<AdminState>,
+    Path(page): Path<u32>,
+    Query(query): Query<PaginationQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let page = page.max(1);
+    let offset = (page - 1) * page_size;
+
+    let articles = sqlx::query_as::<_, Article>(
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at FROM articles ORDER BY created_at DESC LIMIT ? OFFSET ?"
+    )
+    .bind(page_size)
+    .bind(offset)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let responses: Vec<AdminArticleListItem> = articles
+        .iter()
+        .map(|a| a.to_admin_list_item(&state.hashid_manager))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: responses,
     }))
 }

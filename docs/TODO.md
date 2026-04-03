@@ -110,7 +110,7 @@
 
 ## Additional Features / 额外功能
 
-- [ ] Add pagination for list endpoints
+- [x] Add pagination for list endpoints
 - [ ] Add search/filter for articles
 - [ ] Add article sorting options
 - [ ] Optimize database queries with indexes

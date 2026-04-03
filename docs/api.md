@@ -111,6 +111,42 @@ List all registered users. Password hashes are excluded from the response.
 
 **Note / 注意:** All timestamp fields are Unix timestamps (seconds since epoch) / 所有时间戳字段均为 Unix 时间戳（自纪元以来的秒数）
 
+### GET /api/admin/users/page
+Get total pages and item count for users.
+
+获取用户总页数和项目数。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "total_pages": 5,
+    "total_items": 100
+  }
+}
+```
+
+### GET /api/admin/users/page/:page
+List paginated users.
+
+分页列出用户。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `page` (integer) - Page number / 页码
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK` (Same format as `GET /api/admin/users` / 格式同 `GET /api/admin/users`)
+
 ### GET /api/admin/users/:hash_id
 Get detail for a specific user.
 
@@ -467,6 +503,42 @@ The `content` and `file_links` fields are excluded from the list response.
 }
 ```
 
+### GET /api/admin/articles/page
+Get total pages and item count for articles.
+
+获取文章总页数和项目数。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "total_pages": 5,
+    "total_items": 100
+  }
+}
+```
+
+### GET /api/admin/articles/page/:page
+List paginated articles.
+
+分页列出文章。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `page` (integer) - Page number / 页码
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK` (Same format as `GET /api/admin/articles` / 格式同 `GET /api/admin/articles`)
+
 ### GET /api/admin/articles/:hash_id
 Get detail for a specific article.
 
@@ -682,6 +754,42 @@ List all uploaded files, ordered by created_at descending.
   ]
 }
 ```
+
+### GET /api/admin/files/page
+Get total pages and item count for files.
+
+获取文件总页数和项目数。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "total_pages": 5,
+    "total_items": 100
+  }
+}
+```
+
+### GET /api/admin/files/page/:page
+List paginated files.
+
+分页列出文件。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `page` (integer) - Page number / 页码
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK` (Same format as `GET /api/admin/files` / 格式同 `GET /api/admin/files`)
 
 ### GET /api/admin/files/:hash_id
 Get metadata for a specific file.
@@ -1010,6 +1118,46 @@ List visible articles endpoint. Returns articles visible to the user based on th
 
 ---
 
+### GET /api/users/articles/page
+Get total pages and item count for visible articles.
+
+获取可见文章总页数和项目数。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "total_pages": 5,
+    "total_items": 100
+  }
+}
+```
+
+---
+
+### GET /api/users/articles/page/:page
+List paginated visible articles.
+
+分页列出可见文章。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Path Parameters / 路径参数:**
+- `page` (integer) - Page number / 页码
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK` (Same format as `GET /api/users/articles` / 格式同 `GET /api/users/articles`)
+
+---
+
 ### GET /api/users/articles/:hash_id
 Get article detail endpoint with time-based access control. Returns full article content only if user had sufficient tier at article publish time.
 
@@ -1180,6 +1328,46 @@ accessible 字段指示未认证用户是否可以完整访问内容。
 - Results are ordered by `created_at` descending / 结果按 `created_at` 降序排列
 - `accessible = true` when `required_tier = 0`, meaning full content is available via detail endpoint / 当 `required_tier = 0` 时 `accessible = true`，表示可通过详情端点获取完整内容
 - `accessible = false` when `required_tier > 0`, meaning detail endpoint will return 403 Forbidden / 当 `required_tier > 0` 时 `accessible = false`，表示详情端点将返回 403 Forbidden
+
+---
+
+### GET /api/public/articles/page
+Get total pages and item count for public articles.
+
+获取公开文章总页数和项目数。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "total_pages": 5,
+    "total_items": 100
+  }
+}
+```
+
+---
+
+### GET /api/public/articles/page/:page
+List paginated public articles.
+
+分页列出公开文章。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Path Parameters / 路径参数:**
+- `page` (integer) - Page number / 页码
+
+**Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK` (Same format as `GET /api/public/articles` / 格式同 `GET /api/public/articles`)
 
 ---
 

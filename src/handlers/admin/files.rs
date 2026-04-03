@@ -4,11 +4,11 @@
 
 use super::auth::AdminState;
 use crate::error::AppError;
-use crate::handlers::common::ApiResponse;
+use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery};
 use crate::models::file::FileMetadata;
 use axum::{
     Json,
-    extract::{Multipart, Path, State},
+    extract::{Multipart, Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
 };
@@ -22,12 +22,10 @@ use uuid::Uuid;
 // // 列出所有文件。
 // //
 // // 返回按 created_at 降序排列的所有已上传文件列表。
-pub async fn list_files(
-    State(state): State<AdminState>,
-) -> Result<impl IntoResponse, AppError> {
+pub async fn list_files(State(state): State<AdminState>) -> Result<impl IntoResponse, AppError> {
     // 查询所有文件，按创建时间降序排列
     let files = sqlx::query_as::<_, FileMetadata>(
-        "SELECT id, uuid, original_name, file_size, created_at FROM files ORDER BY created_at DESC"
+        "SELECT id, uuid, original_name, file_size, created_at FROM files ORDER BY created_at DESC",
     )
     .fetch_all(&state.pool)
     .await
@@ -61,7 +59,7 @@ pub async fn get_file(
 
     // 2. 查询文件
     let file = sqlx::query_as::<_, FileMetadata>(
-        "SELECT id, uuid, original_name, file_size, created_at FROM files WHERE id = ?"
+        "SELECT id, uuid, original_name, file_size, created_at FROM files WHERE id = ?",
     )
     .bind(id)
     .fetch_optional(&state.pool)
@@ -138,16 +136,17 @@ pub async fn upload_file(
         }
     }
 
-    let (original_name, data) = file_data
-        .ok_or_else(|| AppError::ValidationError("No file field provided".to_string()))?;
+    let (original_name, data) =
+        file_data.ok_or_else(|| AppError::ValidationError("No file field provided".to_string()))?;
 
     // 2. 验证文件大小
     let file_size = data.len() as u64;
     if file_size > state.max_upload_size_bytes {
         let max_mb = state.max_upload_size_bytes / (1024 * 1024);
-        return Err(AppError::ValidationError(
-            format!("File size exceeds maximum allowed size of {} MB", max_mb),
-        ));
+        return Err(AppError::ValidationError(format!(
+            "File size exceeds maximum allowed size of {} MB",
+            max_mb
+        )));
     }
 
     // 3. 生成 UUID v4 作为文件目录名
@@ -171,7 +170,7 @@ pub async fn upload_file(
         .as_secs() as i64;
 
     let id = sqlx::query(
-        "INSERT INTO files (uuid, original_name, file_size, created_at) VALUES (?, ?, ?, ?)"
+        "INSERT INTO files (uuid, original_name, file_size, created_at) VALUES (?, ?, ?, ?)",
     )
     .bind(&file_uuid)
     .bind(&original_name)
@@ -227,7 +226,7 @@ pub async fn delete_file(
 
     // 2. 查询文件记录（需要 uuid 来删除磁盘文件）
     let file = sqlx::query_as::<_, FileMetadata>(
-        "SELECT id, uuid, original_name, file_size, created_at FROM files WHERE id = ?"
+        "SELECT id, uuid, original_name, file_size, created_at FROM files WHERE id = ?",
     )
     .bind(id)
     .fetch_optional(&state.pool)
@@ -256,5 +255,71 @@ pub async fn delete_file(
             "deleted": true,
             "hash_id": hash_id
         }),
+    }))
+}
+
+/// Get total pages for files.
+///
+/// Returns the total number of pages and items based on page_size.
+//
+// // 获取文件总页数。
+// //
+// // 基于 page_size 返回总页数和总项目数。
+pub async fn get_files_page_count(
+    State(state): State<AdminState>,
+    Query(query): Query<PaginationQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_size = query.page_size.unwrap_or(20).max(1);
+
+    let total_items: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM files")
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let total_items = total_items.0 as u32;
+    let total_pages = (total_items + page_size - 1) / page_size;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: PageCountResponse {
+            total_pages,
+            total_items,
+        },
+    }))
+}
+
+/// List files paginated.
+///
+/// Returns a specific page of files based on page and page_size.
+//
+// // 分页列出文件。
+// //
+// // 基于 page 和 page_size 返回特定页的文件。
+pub async fn list_files_paginated(
+    State(state): State<AdminState>,
+    Path(page): Path<u32>,
+    Query(query): Query<PaginationQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let page = page.max(1);
+    let offset = (page - 1) * page_size;
+
+    let files = sqlx::query_as::<_, FileMetadata>(
+        "SELECT id, uuid, original_name, file_size, created_at FROM files ORDER BY created_at DESC LIMIT ? OFFSET ?"
+    )
+    .bind(page_size)
+    .bind(offset)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let responses = files
+        .iter()
+        .map(|f| f.to_response(&state.hashid_manager, &state.base_url))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: responses,
     }))
 }

@@ -4,13 +4,13 @@
 
 use super::auth::UserState;
 use crate::error::AppError;
-use crate::handlers::common::ApiResponse;
+use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery};
 use crate::middleware::auth::AuthClaims;
 use crate::models::article::Article;
 use crate::utils::hashid::HashIdManager;
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     response::IntoResponse,
 };
 use serde::Serialize;
@@ -53,7 +53,7 @@ async fn get_user_tier_at_time(
 // //
 // // 不包含 content、is_public 和 file_links 字段。
 // // 包含 accessible 字段以指示用户是否可以完整访问文章。
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct ArticleListItem {
     pub hash_id: String,
     pub title: String,
@@ -276,5 +276,129 @@ pub async fn get_article(
     Ok(Json(ApiResponse {
         success: true,
         data: article.to_client_detail_response(&state.hashid_manager)?,
+    }))
+}
+
+/// Get total pages for articles.
+///
+/// Returns the total number of pages and items based on page_size.
+//
+// // 获取文章总页数。
+// //
+// // 基于 page_size 返回总页数和总项目数。
+pub async fn get_articles_page_count(
+    State(state): State<UserState>,
+    claims: AuthClaims,
+    Query(query): Query<PaginationQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let user_hash_id = claims
+        .0
+        .sub
+        .strip_prefix("user:")
+        .ok_or_else(|| AppError::Internal("Invalid token subject format".to_string()))?;
+
+    let user_id = state.hashid_manager.decode(user_hash_id)?;
+    let page_size = query.page_size.unwrap_or(20).max(1);
+
+    let articles = sqlx::query_as::<_, Article>(
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at
+         FROM articles"
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut total_items = 0;
+    for article in &articles {
+        let user_tier_at_publish =
+            get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+
+        let can_access = user_tier_at_publish >= article.required_tier;
+
+        if can_access || article.is_public {
+            total_items += 1;
+        }
+    }
+
+    let total_pages = (total_items + page_size - 1) / page_size;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: PageCountResponse {
+            total_pages,
+            total_items,
+        },
+    }))
+}
+
+/// List articles paginated for users.
+///
+/// Returns a specific page of visible articles based on page and page_size.
+//
+// // 分页列出用户可见文章。
+// //
+// // 基于 page 和 page_size 返回特定页的可见文章。
+pub async fn list_articles_paginated(
+    State(state): State<UserState>,
+    claims: AuthClaims,
+    Path(page): Path<u32>,
+    Query(query): Query<PaginationQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let user_hash_id = claims
+        .0
+        .sub
+        .strip_prefix("user:")
+        .ok_or_else(|| AppError::Internal("Invalid token subject format".to_string()))?;
+
+    let user_id = state.hashid_manager.decode(user_hash_id)?;
+
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let page = page.max(1);
+    let offset = (page - 1) * page_size;
+
+    // For user paginated list, we might need a more complex query if we want strict DB pagination
+    // But since the existing implementation filters in memory based on user tier at publish time,
+    // and 'is_public', we must either do the logic in SQL or stick to memory filter.
+    // If we filter in memory, LIMIT/OFFSET in SQL isn't accurate for the final list size.
+    // However, given the current scope, we will fetch all, filter, and then slice. This preserves existing behavior, though less efficient.
+    // A better approach in the future would be a JOIN with user_subscriptions, but that changes the architecture.
+    // To implement `page` correctly with the memory filter:
+
+    let articles = sqlx::query_as::<_, Article>(
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at
+         FROM articles
+         ORDER BY created_at DESC"
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut items: Vec<ArticleListItem> = Vec::new();
+    for article in &articles {
+        let user_tier_at_publish =
+            get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+
+        let can_access = user_tier_at_publish >= article.required_tier;
+
+        if can_access || article.is_public {
+            items.push(article.to_list_item(&state.hashid_manager, user_tier_at_publish)?);
+        }
+    }
+
+    let total_filtered = items.len();
+
+    // Manual pagination
+    let start_index = offset as usize;
+    let end_index = std::cmp::min(start_index + page_size as usize, total_filtered);
+
+    let paginated_items = if start_index < total_filtered {
+        items[start_index..end_index].to_vec()
+    } else {
+        vec![]
+    };
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: paginated_items,
     }))
 }

@@ -29,8 +29,8 @@ pub fn routes(
     hashid_manager: Arc<HashIdManager>,
 ) -> Router {
     // 1. 将 toml::Table 转换为 serde_json::Value，以便 JSON 序列化。
-    let siteinfo_json: serde_json::Value = serde_json::to_value(siteinfo)
-        .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+    let siteinfo_json: serde_json::Value =
+        serde_json::to_value(siteinfo).unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
 
     // 2. 创建公开文章状态
     let public_article_state = PublicArticleState {
@@ -54,6 +54,14 @@ pub fn routes(
         )
         // 3. 公开文章路由
         .route("/api/public/articles", get(articles::list_articles))
+        .route(
+            "/api/public/articles/page",
+            get(articles::get_articles_page_count),
+        )
+        .route(
+            "/api/public/articles/page/{page}",
+            get(articles::list_articles_paginated),
+        )
         .route("/api/public/articles/{hash_id}", get(articles::get_article))
         .with_state(public_article_state)
 }

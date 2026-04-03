@@ -4,7 +4,7 @@
 
 use super::auth::AdminState;
 use crate::error::AppError;
-use crate::handlers::common::ApiResponse;
+use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery};
 use crate::models::user::{CreateUserRequest, UpdateUserRequest, User, UserResponse};
 use crate::utils::hash;
 use axum::{
@@ -275,5 +275,71 @@ pub async fn get_user_tier(
     Ok(Json(ApiResponse {
         success: true,
         data: TierResponse { tier },
+    }))
+}
+
+/// Get total pages for users.
+///
+/// Returns the total number of pages and items based on page_size.
+//
+// // 获取用户总页数。
+// //
+// // 基于 page_size 返回总页数和总项目数。
+pub async fn get_users_page_count(
+    State(state): State<AdminState>,
+    Query(query): Query<PaginationQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_size = query.page_size.unwrap_or(20).max(1);
+
+    let total_items: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users")
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let total_items = total_items.0 as u32;
+    let total_pages = (total_items + page_size - 1) / page_size;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: PageCountResponse {
+            total_pages,
+            total_items,
+        },
+    }))
+}
+
+/// List users paginated.
+///
+/// Returns a specific page of users based on page and page_size.
+//
+// // 分页列出用户。
+// //
+// // 基于 page 和 page_size 返回特定页的用户。
+pub async fn list_users_paginated(
+    State(state): State<AdminState>,
+    Path(page): Path<u32>,
+    Query(query): Query<PaginationQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let page = page.max(1);
+    let offset = (page - 1) * page_size;
+
+    let users = sqlx::query_as::<_, User>(
+        "SELECT id, username, password_hash, email, note, created_at FROM users ORDER BY id DESC LIMIT ? OFFSET ?",
+    )
+    .bind(page_size)
+    .bind(offset)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let user_responses: Vec<UserResponse> = users
+        .iter()
+        .map(|u| u.to_response(state.hashid_manager.encode(u.id).unwrap_or_default()))
+        .collect();
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: user_responses,
     }))
 }

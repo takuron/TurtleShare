@@ -52,6 +52,11 @@ pub fn create_router(
             "/users",
             get(admin::users::list_users).post(admin::users::create_user),
         )
+        .route("/users/page", get(admin::users::get_users_page_count))
+        .route(
+            "/users/page/{page}",
+            get(admin::users::list_users_paginated),
+        )
         .route(
             "/users/{hash_id}",
             get(admin::users::get_user)
@@ -74,6 +79,14 @@ pub fn create_router(
             get(admin::articles::list_articles).post(admin::articles::create_article),
         )
         .route(
+            "/articles/page",
+            get(admin::articles::get_articles_page_count),
+        )
+        .route(
+            "/articles/page/{page}",
+            get(admin::articles::list_articles_paginated),
+        )
+        .route(
             "/articles/{hash_id}",
             get(admin::articles::get_article)
                 .put(admin::articles::update_article)
@@ -82,6 +95,11 @@ pub fn create_router(
         .route(
             "/files",
             get(admin::files::list_files).post(admin::files::upload_file),
+        )
+        .route("/files/page", get(admin::files::get_files_page_count))
+        .route(
+            "/files/page/{page}",
+            get(admin::files::list_files_paginated),
         )
         .route(
             "/files/{hash_id}",
@@ -101,6 +119,14 @@ pub fn create_router(
             get(user::operations::get_own_subscriptions),
         )
         .route("/articles", get(user::articles::list_articles))
+        .route(
+            "/articles/page",
+            get(user::articles::get_articles_page_count),
+        )
+        .route(
+            "/articles/page/{page}",
+            get(user::articles::list_articles_paginated),
+        )
         .route("/articles/{hash_id}", get(user::articles::get_article))
         .route_layer(axum::middleware::from_fn_with_state(
             jwt_manager.clone(),

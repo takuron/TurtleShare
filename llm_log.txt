@@ -69,3 +69,4 @@
 [2026-04-03T13:43:55+08:00] 优化限流器：将滑动窗口记录的保留长度提高至设定的 max_requests 的 1.5 倍，从而获得更多控制并减少重复日志打印；将全局主限流器的配置由每 IP 5分钟 500 次改为 1 分钟 100 次以节约内存，并同步更新了相关集成测试和 API 文档
 [2026-04-03T16:04:19+08:00] Updated admin list_articles API to exclude content and file_links, matching user and public list APIs while retaining is_public attribute.
 [2026-04-03T16:11:42+08:00] Removed is_public attribute from user and public article detail API responses, separating it from the admin article response format.
+[2026-04-03T17:24:24+08:00] Implemented pagination for admin users, admin articles, admin files, user articles, and public articles endpoints with page counts and page_size query parameters.
