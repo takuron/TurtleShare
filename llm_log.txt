@@ -70,3 +70,4 @@
 [2026-04-03T16:04:19+08:00] Updated admin list_articles API to exclude content and file_links, matching user and public list APIs while retaining is_public attribute.
 [2026-04-03T16:11:42+08:00] Removed is_public attribute from user and public article detail API responses, separating it from the admin article response format.
 [2026-04-03T17:24:24+08:00] Implemented pagination for admin users, admin articles, admin files, user articles, and public articles endpoints with page counts and page_size query parameters.
+[2026-04-03T17:31:25+08:00] Added comprehensive pagination API system tests (39 tests) covering admin users/articles/files, user articles, and public articles pagination endpoints.

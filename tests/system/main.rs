@@ -10,6 +10,7 @@ mod admin_subscriptions;
 mod admin_users;
 mod common;
 mod health_check;
+mod pagination;
 mod public_articles;
 mod rate_limiter;
 mod user_articles;
