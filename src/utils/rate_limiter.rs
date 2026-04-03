@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::Mutex;
 
 /// Sliding window rate limiter.
 ///
@@ -70,6 +70,18 @@ impl RateLimiter {
 
         // 3. 检查是否超过限制
         if timestamps.len() >= self.max_requests {
+            if timestamps.len() == self.max_requests {
+                tracing::warn!(
+                    "Rate limit triggered for IP: {} (max {} requests per {}s)",
+                    ip,
+                    self.max_requests,
+                    self.window_secs
+                );
+            }
+            // 记录被拒绝的请求，直到 1.5 倍的 max_requests，从而防止重复打印日志且拥有更多记录控制
+            if timestamps.len() < self.max_requests + self.max_requests / 2 {
+                timestamps.push(now);
+            }
             return false;
         }
 

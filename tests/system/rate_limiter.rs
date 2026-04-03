@@ -3,7 +3,7 @@
 // 测试三个限流器的行为：
 // 1. 管理员登录限流器（5分钟内最多10次请求）
 // 2. 用户登录限流器（5分钟内最多10次请求）
-// 3. 全局限流器（5分钟内每IP最多500次请求，作用于所有 /api/* 路由）
+// 3. 全局限流器（1分钟内每IP最多100次请求，作用于所有 /api/* 路由）
 
 use super::common;
 use serde_json::{Value, json};
@@ -56,7 +56,8 @@ async fn admin_login_rate_limit_triggers_after_10_requests() {
             .await;
         let status = resp.status().as_u16();
         assert_ne!(
-            status, 429,
+            status,
+            429,
             "Request {} should not be rate limited, got 429",
             i + 1
         );
@@ -157,7 +158,8 @@ async fn user_login_rate_limit_triggers_after_10_requests() {
             .await;
         let status = resp.status().as_u16();
         assert_ne!(
-            status, 429,
+            status,
+            429,
             "Request {} should not be rate limited, got 429",
             i + 1
         );
@@ -248,7 +250,7 @@ async fn user_login_rate_limit_independent_from_admin_login() {
 // ============================================================
 
 /// 全局限流器保护所有 API 路由，返回 429 响应格式正确。
-/// 注意：全局限流为500次/5分钟，此测试通过在管理员登录限流后
+/// 注意：全局限流为100次/1分钟，此测试通过在管理员登录限流后
 /// 验证错误格式来确认全局限流器的存在和响应格式。
 #[tokio::test]
 async fn global_rate_limit_response_format() {
@@ -285,7 +287,7 @@ async fn global_rate_limit_response_format() {
 /// 全局限流器应用于公共端点。
 /// 通过发送大量请求到公共端点确认全局限流器在工作。
 /// 注意：wait_until_ready() 会轮询 /api/health 消耗部分全局配额，
-/// 因此实际可用配额略少于500。
+/// 因此实际可用配额略少于100。
 #[tokio::test]
 async fn global_rate_limit_applies_to_public_endpoints() {
     let server = common::TestServer::spawn().await;
@@ -293,7 +295,7 @@ async fn global_rate_limit_applies_to_public_endpoints() {
     // 1. 持续发送请求直到被限流或超过合理上限
     let mut success_count = 0;
     let mut rate_limited = false;
-    for _ in 0..510 {
+    for _ in 0..110 {
         let resp = server.get("/api/health").await;
         if resp.status() == 429 {
             rate_limited = true;
@@ -309,10 +311,10 @@ async fn global_rate_limit_applies_to_public_endpoints() {
 
     // 2. 必须在合理范围内触发限流
     assert!(rate_limited, "Global rate limit should have triggered");
-    // 成功次数应接近500（wait_until_ready 消耗了少量配额）
+    // 成功次数应接近100（wait_until_ready 消耗了少量配额）
     assert!(
-        success_count >= 490 && success_count <= 500,
-        "Expected ~500 successful requests before rate limit, got {}",
+        success_count >= 90 && success_count <= 100,
+        "Expected ~100 successful requests before rate limit, got {}",
         success_count
     );
 }
@@ -326,7 +328,7 @@ async fn global_rate_limit_shared_across_all_api_routes() {
     // 1. 通过公共端点消耗全局配额直到接近上限
     //    持续发送直到剩余约2次配额
     let mut sent = 0;
-    for _ in 0..510 {
+    for _ in 0..110 {
         let resp = server.get("/api/health").await;
         sent += 1;
         if resp.status() == 429 {

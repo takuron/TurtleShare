@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 /// Global rate limiting middleware.
 ///
-/// Applies a sliding window rate limit of 500 requests per 5 minutes per IP address
+/// Applies a sliding window rate limit of 100 requests per 1 minute per IP address
 /// to all API endpoints.
 ///
 /// Uses `Extension` instead of `State` to avoid conflicts with the router's primary
@@ -28,7 +28,7 @@ use std::sync::Arc;
 //
 // // 全局限流中间件。
 // //
-// // 对所有 API 端点应用每 IP 每 5 分钟最多 500 次请求的滑动窗口限制。
+// // 对所有 API 端点应用每 IP 每 1 分钟最多 100 次请求的滑动窗口限制。
 // //
 // // 使用 `Extension` 而不是 `State` 以避免与路由器的主要状态类型冲突，
 // // 允许此中间件应用于使用不同状态类型（如 `AdminState`、`UserState`）的路由之上。
@@ -53,10 +53,7 @@ pub async fn global_rate_limit(
     // 2. 检查限流状态
     if !limiter.check(&ip).await {
         // 3. 如果超过限制，返回 429 错误
-        return Err(AppError::TooManyRequests(format!(
-            "Rate limit exceeded for IP {}. Maximum 500 requests per 5 minutes.",
-            ip
-        )));
+        return Err(AppError::TooManyRequests("Rate limit exceeded".to_string()));
     }
 
     // 4. 继续处理请求

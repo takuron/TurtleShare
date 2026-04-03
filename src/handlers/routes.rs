@@ -23,8 +23,8 @@ pub fn create_router(
     hashid_manager: Arc<HashIdManager>,
     pool: sqlx::SqlitePool,
 ) -> Router {
-    // 1. 创建全局限流器（每IP每5分钟最多500次请求）
-    let global_limiter = Arc::new(RateLimiter::new(300, 500));
+    // 1. 创建全局限流器（每IP每1分钟最多100次请求）
+    let global_limiter = Arc::new(RateLimiter::new(60, 100));
 
     // 2. 创建管理员状态（5分钟内最多10次请求）
     let admin_state = admin::AdminState {
