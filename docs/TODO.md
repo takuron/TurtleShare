@@ -83,24 +83,24 @@
 ## Phase 4: Polish / 完善
 
 ### Error Handling / 错误处理
-- [ ] Implement unified error response format
-- [ ] Add error codes (UNAUTHORIZED, FORBIDDEN, NOT_FOUND, VALIDATION_ERROR, INTERNAL_ERROR)
-- [ ] Add proper HTTP status codes
+- [x] Implement unified error response format
+- [x] Add error codes (UNAUTHORIZED, FORBIDDEN, NOT_FOUND, VALIDATION_ERROR, INTERNAL_ERROR)
+- [x] Add proper HTTP status codes
 - [ ] Handle database errors gracefully
 - [ ] Handle file system errors gracefully
 
 ### Input Validation / 输入验证
 - [ ] Validate all request parameters
 - [ ] Sanitize user inputs
-- [ ] Validate file uploads (size, type)
+- [x] Validate file uploads
 - [x] Migrate time format from RFC 3339 strings to Unix timestamps
 
 ### Security / 安全
-- [ ] Implement Argon2 password hashing
+- [x] Implement Argon2 password hashing
 - [ ] Add CORS configuration
-- [ ] Prevent SQL injection (use parameterized queries)
+- [x] Prevent SQL injection (use parameterized queries)
 - [ ] Prevent directory traversal in file paths
-- [ ] Add rate limiting (recommended for production)
+- [x] Add rate limiting (recommended for production)
 
 ### Logging / 日志
 - [x] Add structured logging
