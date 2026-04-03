@@ -11,6 +11,7 @@ mod admin_users;
 mod common;
 mod health_check;
 mod public_articles;
+mod rate_limiter;
 mod user_articles;
 mod user_auth;
 mod user_operations;

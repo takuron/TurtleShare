@@ -38,7 +38,8 @@ src/
 │       └── api.rs       # Health check, site info / 健康检查、站点信息 ✅
 ├── middleware/          # Middleware / 中间件
 │   ├── mod.rs           # ✅
-│   └── auth.rs          # Authentication (admin/user) / 鉴权（管理员/用户） ✅
+│   ├── auth.rs          # Authentication (admin/user) / 鉴权（管理员/用户） ✅
+│   └── rate_limiter.rs  # Global per-IP rate limiting / 全局每IP限流 ✅
 └── utils/               # Utilities / 工具函数
     ├── mod.rs           # ✅
     ├── hash.rs          # Password hashing (Argon2id) / 密码哈希 ✅

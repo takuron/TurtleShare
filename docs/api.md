@@ -1,5 +1,29 @@
 # API Endpoints / API 端点
 
+## Rate Limiting / 限流
+
+All API endpoints are protected by a global rate limiter.
+所有 API 端点均受全局限流器保护。
+
+- **Window**: 5 minutes (300 seconds) / 窗口：5 分钟（300 秒）
+- **Max Requests**: 500 per IP address per window / 最大请求数：每个 IP 地址每个窗口 500 次
+- **Scope**: Applies to all `/api/*` routes (public, user, and admin) / 范围：适用于所有 `/api/*` 路由（公开、用户和管理员）
+- **Error Response**: Returns `429 Too Many Requests` with error code `TOO_MANY_REQUESTS` / 错误响应：返回 `429 请求过多`，错误码为 `TOO_MANY_REQUESTS`
+
+### Rate Limit Error Response / 限流错误响应
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "TOO_MANY_REQUESTS",
+    "message": "Rate limit exceeded for IP <ip>. Maximum 500 requests per 5 minutes."
+  }
+}
+```
+
+---
+
 ## Admin Endpoints / 管理员端点
 
 ### POST /api/admin/login
