@@ -19,6 +19,7 @@ use tempfile::TempDir;
 //
 // // 表示一个用于测试的运行中的 TurtleShare 服务器实例。
 // // 在 Drop 时自动终止服务器进程并清理临时文件。
+#[allow(dead_code)]
 pub struct TestServer {
     /// HTTP client pre-configured with the server's base URL.
     // // 预配置了服务器基础 URL 的 HTTP 客户端。
