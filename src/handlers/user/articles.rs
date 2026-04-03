@@ -275,6 +275,6 @@ pub async fn get_article(
     // 7. 返回文章完整详情
     Ok(Json(ApiResponse {
         success: true,
-        data: article.to_response(&state.hashid_manager)?,
+        data: article.to_client_detail_response(&state.hashid_manager)?,
     }))
 }

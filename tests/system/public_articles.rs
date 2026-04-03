@@ -19,8 +19,16 @@ async fn create_article(
     required_tier: i64,
     is_public: bool,
 ) -> String {
-    create_article_with_options(server, admin_token, title, required_tier, is_public, None, &[])
-        .await
+    create_article_with_options(
+        server,
+        admin_token,
+        title,
+        required_tier,
+        is_public,
+        None,
+        &[],
+    )
+    .await
 }
 
 /// 通过管理员 API 创建文章（带可选参数），返回 hash_id。
@@ -316,7 +324,6 @@ async fn public_get_article_detail_tier0_success() {
     assert_eq!(data["cover_image"], "/files/uuid/cover.jpg");
     assert_eq!(data["content"], "Content of Free Full Article");
     assert_eq!(data["required_tier"], 0);
-    assert_eq!(data["is_public"], true);
     assert!(data["created_at"].is_number());
     assert!(data["updated_at"].is_number());
 
@@ -324,7 +331,10 @@ async fn public_get_article_detail_tier0_success() {
     let file_links = data["file_links"].as_array().unwrap();
     assert_eq!(file_links.len(), 1);
     assert_eq!(file_links[0]["name"], "doc.pdf");
-    assert_eq!(file_links[0]["url"], "https://example.com/files/uuid/doc.pdf");
+    assert_eq!(
+        file_links[0]["url"],
+        "https://example.com/files/uuid/doc.pdf"
+    );
 }
 
 /// 公开 tier=0 文章无 file_links 时应返回空数组。
@@ -488,10 +498,7 @@ async fn public_endpoints_work_with_token_present() {
     assert_eq!(list_resp.status(), 200);
 
     let detail_resp = server
-        .get_with_token(
-            &format!("/api/public/articles/{}", hash_id),
-            &admin_token,
-        )
+        .get_with_token(&format!("/api/public/articles/{}", hash_id), &admin_token)
         .await;
     assert_eq!(detail_resp.status(), 200);
 }
@@ -590,9 +597,7 @@ async fn public_article_path_traversal_in_hash_id() {
     ];
 
     for id in &malicious_ids {
-        let resp = server
-            .get(&format!("/api/public/articles/{}", id))
-            .await;
+        let resp = server.get(&format!("/api/public/articles/{}", id)).await;
         let status = resp.status().as_u16();
         // 应返回 400 或 404，而不是 200 或 500
         assert!(

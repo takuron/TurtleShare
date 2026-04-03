@@ -442,8 +442,10 @@ Delete a subscription from the database.
 
 ### GET /api/admin/articles
 List all articles, ordered by created_at descending.
+The `content` and `file_links` fields are excluded from the list response.
 
 列出所有文章，按 created_at 降序排列。
+列表响应中不包含 `content` 和 `file_links` 字段。
 
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
 
@@ -456,10 +458,8 @@ List all articles, ordered by created_at descending.
       "hash_id": "xK9mNq",
       "title": "My Article",
       "cover_image": "/files/uuid-123/cover.jpg",
-      "content": "# Hello\nArticle content here.",
       "required_tier": 2,
       "is_public": true,
-      "file_links": [{"name": "report.pdf", "url": "https://example.com/files/uuid-123/report.pdf"}],
       "created_at": 1710928800,
       "updated_at": 1710928800
     }
@@ -1205,7 +1205,6 @@ Returns 403 Forbidden if required_tier > 0.
     "cover_image": "/files/uuid/cover.jpg",
     "content": "Full article content here...",
     "required_tier": 0,
-    "is_public": true,
     "file_links": [
       {
         "name": "document.pdf",
@@ -1224,7 +1223,6 @@ Returns 403 Forbidden if required_tier > 0.
 - `cover_image` (string|null) - Cover image path / 封面图片路径
 - `content` (string) - Article content (Markdown) / 文章内容（Markdown）
 - `required_tier` (integer) - Minimum tier required to access / 访问所需的最低等级
-- `is_public` (boolean) - Whether article is publicly listed / 文章是否公开列出
 - `file_links` (array) - File links with name and url / 包含名称和链接的文件链接数组
 - `created_at` (integer) - Creation timestamp / 创建时间戳
 - `updated_at` (integer) - Last update timestamp / 最后更新时间戳

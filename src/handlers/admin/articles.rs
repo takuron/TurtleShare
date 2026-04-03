@@ -14,18 +14,69 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
+use serde::Serialize;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+/// Article list item for admin-facing article list.
+///
+/// Does not include content and file_links fields, but retains is_public.
+//
+// // 管理员面向的文章列表项。
+// //
+// // 不包含 content 和 file_links 字段，但保留 is_public。
+#[derive(Debug, Serialize)]
+pub struct AdminArticleListItem {
+    pub hash_id: String,
+    pub title: String,
+    pub cover_image: Option<String>,
+    pub required_tier: i32,
+    pub is_public: bool,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+impl Article {
+    /// Converts Article to AdminArticleListItem.
+    ///
+    /// # Arguments
+    /// * `hash_id_manager` - The HashID manager for encoding IDs
+    ///
+    /// # Returns
+    /// Returns the AdminArticleListItem.
+    //
+    // // 将 Article 转换为 AdminArticleListItem。
+    // //
+    // // # 参数
+    // // * `hash_id_manager` - 用于编码 ID 的 HashID 管理器
+    // //
+    // // # 返回
+    // // 返回 AdminArticleListItem。
+    fn to_admin_list_item(
+        &self,
+        hash_id_manager: &crate::utils::hashid::HashIdManager,
+    ) -> Result<AdminArticleListItem, AppError> {
+        Ok(AdminArticleListItem {
+            hash_id: hash_id_manager.encode(self.id)?,
+            title: self.title.clone(),
+            cover_image: self.cover_image.clone(),
+            required_tier: self.required_tier,
+            is_public: self.is_public,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        })
+    }
+}
 
 /// List all articles.
 ///
 /// Returns a list of all articles ordered by created_at descending.
+/// Excludes content and file_links from the response.
 //
 // // 列出所有文章。
 // //
 // // 返回按 created_at 降序排列的所有文章列表。
-pub async fn list_articles(
-    State(state): State<AdminState>,
-) -> Result<impl IntoResponse, AppError> {
+// // 响应中不包含 content 和 file_links。
+pub async fn list_articles(State(state): State<AdminState>) -> Result<impl IntoResponse, AppError> {
     // 查询所有文章，按创建时间降序排列
     let articles = sqlx::query_as::<_, Article>(
         "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at FROM articles ORDER BY created_at DESC"
@@ -35,9 +86,9 @@ pub async fn list_articles(
     .map_err(|e| AppError::Database(e.to_string()))?;
 
     // 转换为带有 hash_id 的响应
-    let responses: Vec<ArticleResponse> = articles
+    let responses: Vec<AdminArticleListItem> = articles
         .iter()
-        .map(|a| a.to_response(&state.hashid_manager))
+        .map(|a| a.to_admin_list_item(&state.hashid_manager))
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(Json(ApiResponse {

@@ -67,6 +67,25 @@ pub struct ArticleResponse {
     pub updated_at: i64,
 }
 
+/// Article detail response for user and public APIs.
+///
+/// Excludes is_public field.
+//
+// // 用户和公开 API 的文章详情响应。
+// //
+// // 排除 is_public 字段。
+#[derive(Debug, Serialize)]
+pub struct ClientArticleDetailResponse {
+    pub hash_id: String,
+    pub title: String,
+    pub cover_image: Option<String>,
+    pub content: String,
+    pub required_tier: i32,
+    pub file_links: Vec<FileLink>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
 impl Article {
     /// Parses the stored JSON string into a Vec<FileLink>.
     ///
@@ -87,7 +106,10 @@ impl Article {
     /// Converts Article to ArticleResponse with encoded hash_id.
     //
     // // 将 Article 转换为带有编码 hash_id 的 ArticleResponse。
-    pub fn to_response(&self, hash_id_manager: &HashIdManager) -> Result<ArticleResponse, AppError> {
+    pub fn to_response(
+        &self,
+        hash_id_manager: &HashIdManager,
+    ) -> Result<ArticleResponse, AppError> {
         Ok(ArticleResponse {
             hash_id: hash_id_manager.encode(self.id)?,
             title: self.title.clone(),
@@ -95,6 +117,25 @@ impl Article {
             content: self.content.clone(),
             required_tier: self.required_tier,
             is_public: self.is_public,
+            file_links: self.parse_file_links()?,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        })
+    }
+
+    /// Converts Article to ClientArticleDetailResponse with encoded hash_id.
+    //
+    // // 将 Article 转换为带有编码 hash_id 的 ClientArticleDetailResponse。
+    pub fn to_client_detail_response(
+        &self,
+        hash_id_manager: &HashIdManager,
+    ) -> Result<ClientArticleDetailResponse, AppError> {
+        Ok(ClientArticleDetailResponse {
+            hash_id: hash_id_manager.encode(self.id)?,
+            title: self.title.clone(),
+            cover_image: self.cover_image.clone(),
+            content: self.content.clone(),
+            required_tier: self.required_tier,
             file_links: self.parse_file_links()?,
             created_at: self.created_at,
             updated_at: self.updated_at,

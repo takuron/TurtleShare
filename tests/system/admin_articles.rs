@@ -11,11 +11,7 @@ use serde_json::{Value, json};
 // ============================================================
 
 /// 创建一篇测试文章并返回其 hash_id。
-async fn create_test_article(
-    server: &common::TestServer,
-    token: &str,
-    title: &str,
-) -> String {
+async fn create_test_article(server: &common::TestServer, token: &str, title: &str) -> String {
     let resp = server
         .post_json_with_token(
             "/api/admin/articles",
@@ -79,9 +75,15 @@ async fn create_article_success() {
     let file_links = data["file_links"].as_array().unwrap();
     assert_eq!(file_links.len(), 2);
     assert_eq!(file_links[0]["name"], "report.pdf");
-    assert_eq!(file_links[0]["url"], "https://example.com/files/uuid-123/report.pdf");
+    assert_eq!(
+        file_links[0]["url"],
+        "https://example.com/files/uuid-123/report.pdf"
+    );
     assert_eq!(file_links[1]["name"], "data.csv");
-    assert_eq!(file_links[1]["url"], "https://example.com/files/uuid-456/data.csv");
+    assert_eq!(
+        file_links[1]["url"],
+        "https://example.com/files/uuid-456/data.csv"
+    );
 
     // created_at 和 updated_at 应该是合理的 Unix 时间戳
     let created_at = data["created_at"].as_i64().unwrap();
@@ -248,9 +250,7 @@ async fn list_articles_empty() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
-    let resp = server
-        .get_with_token("/api/admin/articles", &token)
-        .await;
+    let resp = server.get_with_token("/api/admin/articles", &token).await;
 
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
@@ -272,9 +272,7 @@ async fn list_articles_returns_all_ordered() {
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
     create_test_article(&server, &token, "Article C").await;
 
-    let resp = server
-        .get_with_token("/api/admin/articles", &token)
-        .await;
+    let resp = server.get_with_token("/api/admin/articles", &token).await;
 
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
@@ -721,9 +719,7 @@ async fn delete_article_success() {
     assert_eq!(body["data"]["hash_id"], hash_id);
 
     // 验证文章已从列表中移除
-    let list_resp = server
-        .get_with_token("/api/admin/articles", &token)
-        .await;
+    let list_resp = server.get_with_token("/api/admin/articles", &token).await;
     let list_body: Value = list_resp.json().await.unwrap();
     assert!(list_body["data"].as_array().unwrap().is_empty());
 }
@@ -799,13 +795,16 @@ async fn create_article_sql_injection_in_content() {
     // 应成功创建（参数化查询保护）
     assert_eq!(resp.status(), 201);
 
-    // 验证表仍然正常工作
-    let list_resp = server
-        .get_with_token("/api/admin/articles", &token)
+    // 验证表仍然正常工作并存储了内容
+    let post_body: Value = resp.json().await.unwrap();
+    let hash_id = post_body["data"]["hash_id"].as_str().unwrap();
+
+    let detail_resp = server
+        .get_with_token(&format!("/api/admin/articles/{}", hash_id), &token)
         .await;
-    assert_eq!(list_resp.status(), 200);
-    let list_body: Value = list_resp.json().await.unwrap();
-    assert_eq!(list_body["data"][0]["content"], sql_content);
+    assert_eq!(detail_resp.status(), 200);
+    let detail_body: Value = detail_resp.json().await.unwrap();
+    assert_eq!(detail_body["data"]["content"], sql_content);
 }
 
 /// 所有文章操作在无认证时都应返回 401。
@@ -817,10 +816,7 @@ async fn all_article_routes_require_auth() {
     assert_eq!(server.get("/api/admin/articles").await.status(), 401);
 
     // GET /api/admin/articles/:hash_id
-    assert_eq!(
-        server.get("/api/admin/articles/abc123").await.status(),
-        401
-    );
+    assert_eq!(server.get("/api/admin/articles/abc123").await.status(), 401);
 
     // POST /api/admin/articles
     let resp = server
@@ -838,10 +834,7 @@ async fn all_article_routes_require_auth() {
 
     // PUT /api/admin/articles/:hash_id
     let resp = server
-        .put_json(
-            "/api/admin/articles/abc123",
-            &json!({"title": "No Auth"}),
-        )
+        .put_json("/api/admin/articles/abc123", &json!({"title": "No Auth"}))
         .await;
     assert_eq!(resp.status(), 401);
 
