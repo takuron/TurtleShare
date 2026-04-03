@@ -17,9 +17,6 @@ pub enum AppError {
     #[error("Database error: {0}")]
     Database(String),
 
-    #[error("Authentication error: {0}")]
-    Auth(String),
-
     #[error("Unauthorized: {0}")]
     Unauthorized(String),
 
@@ -34,9 +31,6 @@ pub enum AppError {
 
     #[error("Hashing error: {0}")]
     Hash(String),
-
-    #[error("Network error: {0}")]
-    Network(String),
 
     #[error("Internal server error: {0}")]
     Internal(String),
@@ -58,13 +52,11 @@ impl IntoResponse for AppError {
         let (status, code, message) = match self {
             AppError::Config(m) => (StatusCode::INTERNAL_SERVER_ERROR, "CONFIG_ERROR", m),
             AppError::Database(m) => (StatusCode::INTERNAL_SERVER_ERROR, "DATABASE_ERROR", m),
-            AppError::Auth(m) => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED", m),
             AppError::Unauthorized(m) => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED", m),
             AppError::Forbidden(m) => (StatusCode::FORBIDDEN, "FORBIDDEN", m),
             AppError::ValidationError(m) => (StatusCode::BAD_REQUEST, "VALIDATION_ERROR", m),
             AppError::TooManyRequests(m) => (StatusCode::TOO_MANY_REQUESTS, "TOO_MANY_REQUESTS", m),
             AppError::Hash(m) => (StatusCode::INTERNAL_SERVER_ERROR, "HASH_ERROR", m),
-            AppError::Network(m) => (StatusCode::BAD_GATEWAY, "NETWORK_ERROR", m),
             AppError::Internal(m) => (StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", m),
             AppError::NotFound(m) => (StatusCode::NOT_FOUND, "NOT_FOUND", m),
             AppError::InvalidHashId(m) => (StatusCode::BAD_REQUEST, "INVALID_HASH_ID", m),

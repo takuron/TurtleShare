@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # ─── Job 1: 编译检查（所有分支/PR，允许 warning） ───────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry & build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build (warnings allowed)
+        run: cargo build
+
+  # ─── Job 2: 集成测试（仅推送到 main 分支，零 warning 零 error） ──────────
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry & build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      # 集成测试需要先编译二进制，并且要求零 warning
+      - name: Build (deny warnings)
+        env:
+          RUSTFLAGS: "-D warnings"
+        run: cargo build
+
+      # 运行所有集成测试（--test system 对应 tests/system/main.rs）
+      - name: Run integration tests
+        env:
+          RUSTFLAGS: "-D warnings"
+        run: cargo test --test system -- --nocapture

@@ -71,3 +71,5 @@
 [2026-04-03T16:11:42+08:00] Removed is_public attribute from user and public article detail API responses, separating it from the admin article response format.
 [2026-04-03T17:24:24+08:00] Implemented pagination for admin users, admin articles, admin files, user articles, and public articles endpoints with page counts and page_size query parameters.
 [2026-04-03T17:31:25+08:00] Added comprehensive pagination API system tests (39 tests) covering admin users/articles/files, user articles, and public articles pagination endpoints.
+[2026-04-03T18:05:43+08:00] Removed unused AppError variants Auth and Network from src/error.rs to fix dead_code warnings.
+[2026-04-03T18:08:35+08:00] Added GitHub CI workflow (.github/workflows/ci.yml): build job for all branches (warnings allowed), integration-test job triggered only on push to main (RUSTFLAGS=-D warnings).
