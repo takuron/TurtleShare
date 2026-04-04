@@ -26,6 +26,25 @@ min_length = 6
 [siteinfo]
 name = "TurtleShare"
 author = "Admin"
-sponsor_link = ""
-header_image = ""
-base_url = "http://127.0.0.1:3000"
+avatar = ""
+bio = "adminadminadmin"
+
+[[siteinfo.social_links]]
+platform = "github"
+url = "https://github.com/takuron"
+
+[[siteinfo.social_links]]
+platform = "x"
+url = "https://x.com/example"
+
+[[siteinfo.social_links]]
+platform = "bilibili"
+url = "https://space.bilibili.com/12345"
+
+[[siteinfo.social_links]]
+platform = "telegram"
+url = "https://t.me/example"
+
+[[siteinfo.social_links]]
+platform = "email"
+url = "mailto:hello@example.com"

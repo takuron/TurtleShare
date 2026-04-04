@@ -49,7 +49,7 @@ pub struct PublicArticleListItem {
     /// / 是否可以完整访问文章内容。
     /// 对于公开用户，仅当 required_tier = 0 时为 true。
     pub accessible: bool,
-    pub created_at: i64,
+    pub publish_at: i64,
     pub updated_at: i64,
 }
 
@@ -86,7 +86,7 @@ impl Article {
             cover_image: self.cover_image.clone(),
             required_tier: self.required_tier,
             accessible,
-            created_at: self.created_at,
+            publish_at: self.publish_at,
             updated_at: self.updated_at,
         })
     }
@@ -132,10 +132,10 @@ pub async fn list_articles(
 ) -> Result<impl IntoResponse, AppError> {
     // 1. 查询所有公开文章（is_public = true）
     let articles = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
          FROM articles
          WHERE is_public = 1
-         ORDER BY created_at DESC"
+         ORDER BY publish_at DESC"
     )
     .fetch_all(&state.pool)
     .await
@@ -197,7 +197,7 @@ pub async fn get_article(
 
     // 2. 查询文章
     let article = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
          FROM articles
          WHERE id = ?"
     )
@@ -273,10 +273,10 @@ pub async fn list_articles_paginated(
     let offset = (page - 1) * page_size;
 
     let articles = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
          FROM articles
          WHERE is_public = 1
-         ORDER BY created_at DESC
+         ORDER BY publish_at DESC
          LIMIT ? OFFSET ?"
     )
     .bind(page_size)

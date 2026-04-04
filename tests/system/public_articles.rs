@@ -171,18 +171,19 @@ async fn public_list_articles_excludes_detail_fields() {
     assert!(article["title"].is_string());
     assert!(article["required_tier"].is_number());
     assert!(!article["accessible"].is_null());
-    assert!(article["created_at"].is_number());
+    assert!(article["publish_at"].is_number());
     assert!(article["updated_at"].is_number());
 
     // 不应包含的字段
     assert!(article.get("content").is_none() || article["content"].is_null());
     assert!(article.get("is_public").is_none() || article["is_public"].is_null());
     assert!(article.get("file_links").is_none() || article["file_links"].is_null());
+    assert!(article.get("created_at").is_none() || article["created_at"].is_null());
 }
 
-/// 公开文章列表应按 created_at 降序排列。
+/// 公开文章列表应按 publish_at 降序排列。
 #[tokio::test]
-async fn public_list_articles_ordered_by_created_at_desc() {
+async fn public_list_articles_ordered_by_publish_at_desc() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
@@ -324,7 +325,7 @@ async fn public_get_article_detail_tier0_success() {
     assert_eq!(data["cover_image"], "/files/uuid/cover.jpg");
     assert_eq!(data["content"], "Content of Free Full Article");
     assert_eq!(data["required_tier"], 0);
-    assert!(data["created_at"].is_number());
+    assert!(data["publish_at"].is_number());
     assert!(data["updated_at"].is_number());
 
     // 验证 file_links

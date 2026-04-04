@@ -477,10 +477,10 @@ Delete a subscription from the database.
 **Note / 注意:** All article IDs in API requests and responses use hash IDs (encoded strings) for security. Numeric IDs are never exposed. / 所有 API 请求和响应中的文章 ID 都使用哈希 ID（编码字符串）以保护安全。数字 ID 永远不会暴露。
 
 ### GET /api/admin/articles
-List all articles, ordered by created_at descending.
+List all articles, ordered by publish_at descending.
 The `content` and `file_links` fields are excluded from the list response.
 
-列出所有文章，按 created_at 降序排列。
+列出所有文章，按 publish_at 降序排列。
 列表响应中不包含 `content` 和 `file_links` 字段。
 
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
@@ -496,6 +496,7 @@ The `content` and `file_links` fields are excluded from the list response.
       "cover_image": "/files/uuid-123/cover.jpg",
       "required_tier": 2,
       "is_public": true,
+      "publish_at": 1710928800,
       "created_at": 1710928800,
       "updated_at": 1710928800
     }
@@ -561,6 +562,7 @@ Get detail for a specific article.
     "required_tier": 2,
     "is_public": true,
     "file_links": [{"name": "report.pdf", "url": "https://example.com/files/uuid-123/report.pdf"}],
+    "publish_at": 1710928800,
     "created_at": 1710928800,
     "updated_at": 1710928800
   }
@@ -604,6 +606,7 @@ Create a new article.
 - `required_tier` (integer, required) - Minimum subscription tier required (must be 0-255) / 访问所需的最低订阅等级（必须为 0-255）
 - `is_public` (boolean, required) - Whether the article is publicly listed / 文章是否公开列出
 - `file_links` (array, optional, default `[]`) - Array of file link objects, each with `name` (string) and `url` (string, must be an absolute URL starting with `http://` or `https://`) / 文件链接对象数组，每个包含 `name`（字符串）和 `url`（字符串，必须是以 `http://` 或 `https://` 开头的绝对链接），默认为空数组
+- `publish_at` (integer|null, optional) - Publish timestamp for access control. If omitted or negative, defaults to `created_at`. / 用于访问控制的发布时间戳。如果省略或为负数，默认与 `created_at` 相同。
 
 **Validation Rules / 验证规则:**
 - `title` must not be empty or whitespace-only / `title` 不能为空或仅包含空白字符
@@ -621,6 +624,7 @@ Create a new article.
     "required_tier": 2,
     "is_public": true,
     "file_links": [{"name": "report.pdf", "url": "https://example.com/files/uuid-123/report.pdf"}],
+    "publish_at": 1710928800,
     "created_at": 1710928800,
     "updated_at": 1710928800
   }
@@ -660,7 +664,7 @@ Update an existing article. Only the provided fields are updated. The `updated_a
 }
 ```
 
-**Note / 注意:** Setting `cover_image` to an empty string will clear the field (set to null). Setting `file_links` to an empty array `[]` will clear all file links. / 将 `cover_image` 设为空字符串将清除该字段（设为 null）。将 `file_links` 设为空数组 `[]` 将清除所有文件链接。
+**Note / 注意:** Setting `cover_image` to an empty string will clear the field (set to null). Setting `file_links` to an empty array `[]` will clear all file links. Setting `publish_at` to a negative value will reset it to `created_at`. / 将 `cover_image` 设为空字符串将清除该字段（设为 null）。将 `file_links` 设为空数组 `[]` 将清除所有文件链接。将 `publish_at` 设为负数将重置为 `created_at`。
 
 **Validation Rules / 验证规则:**
 - If provided, `title` must not be empty or whitespace-only / 如果提供，`title` 不能为空或仅包含空白字符
@@ -678,6 +682,7 @@ Update an existing article. Only the provided fields are updated. The `updated_a
     "required_tier": 3,
     "is_public": false,
     "file_links": [],
+    "publish_at": 1710928800,
     "created_at": 1710928800,
     "updated_at": 1711022400
   }
@@ -1085,7 +1090,7 @@ List visible articles endpoint. Returns articles visible to the user based on th
       "cover_image": "/files/uuid/cover.jpg",
       "required_tier": 2,
       "accessible": true,
-      "created_at": 1700000000,
+      "publish_at": 1700000000,
       "updated_at": 1700000000
     },
     {
@@ -1094,7 +1099,7 @@ List visible articles endpoint. Returns articles visible to the user based on th
       "cover_image": null,
       "required_tier": 1,
       "accessible": false,
-      "created_at": 1690000000,
+      "publish_at": 1690000000,
       "updated_at": 1690000000
     }
   ]
@@ -1107,14 +1112,14 @@ List visible articles endpoint. Returns articles visible to the user based on th
 - `cover_image` (string|null) - Cover image path / 封面图片路径
 - `required_tier` (integer) - Minimum tier required to fully access / 完整访问所需的最低等级
 - `accessible` (boolean) - Whether user can fully access the article content / 用户是否可以完整访问文章内容
-- `created_at` (integer) - Creation timestamp / 创建时间戳
+- `publish_at` (integer) - Publish timestamp used for access control / 用于访问控制的发布时间戳
 - `updated_at` (integer) - Last update timestamp / 最后更新时间戳
 
 **Notes / 注意事项:**
 - An article is visible if user had sufficient tier at publish time (`accessible = true`) OR article is public (`accessible = false`) / 文章在用户发布时有足够等级（`accessible = true`）或文章是公开的（`accessible = false`）时可见
-- The `content`, `is_public`, and `file_links` fields are intentionally excluded / `content`、`is_public` 和 `file_links` 字段被有意排除
-- Access is determined by user's tier at article's `created_at` time, not current tier / 访问权限由用户在文章 `created_at` 时间的等级决定，而非当前等级
-- Results are ordered by `created_at` descending / 结果按 `created_at` 降序排列
+- The `content`, `is_public`, `file_links`, and `created_at` fields are intentionally excluded / `content`、`is_public`、`file_links` 和 `created_at` 字段被有意排除
+- Access is determined by user's tier at article's `publish_at` time, not current tier / 访问权限由用户在文章 `publish_at` 时间的等级决定，而非当前等级
+- Results are ordered by `publish_at` descending / 结果按 `publish_at` 降序排列
 
 ---
 
@@ -1180,7 +1185,7 @@ Get article detail endpoint with time-based access control. Returns full article
     "required_tier": 2,
     "is_public": false,
     "file_links": [],
-    "created_at": 1700000000,
+    "publish_at": 1700000000,
     "updated_at": 1700000000
   }
 }
@@ -1211,7 +1216,7 @@ Get article detail endpoint with time-based access control. Returns full article
 ```
 
 **Notes / 注意事项:**
-- Access is determined solely by user's tier at article's `created_at` time / 访问权限仅由用户在文章 `created_at` 时间的等级决定
+- Access is determined solely by user's tier at article's `publish_at` time / 访问权限仅由用户在文章 `publish_at` 时间的等级决定
 - Public status (`is_public`) does NOT grant access to full article content / 公开状态（`is_public`）不授予完整文章内容的访问权限
 - Even if an article appears in the list with `accessible: false`, requesting its detail will return 403 / 即使文章在列表中显示为 `accessible: false`，请求其详情将返回 403
 
@@ -1264,9 +1269,15 @@ The response shape is fully controlled by the configuration file — any keys ad
   "data": {
     "name": "TurtleShare",
     "author": "Admin",
-    "sponsor_link": "",
-    "header_image": "",
-    "theme_color": "#3498db"
+    "avatar": "",
+    "bio": "Admin",
+    "social_links": [
+      { "platform": "github", "url": "https://github.com/example" },
+      { "platform": "x", "url": "https://x.com/example" },
+      { "platform": "bilibili", "url": "https://space.bilibili.com/12345" },
+      { "platform": "telegram", "url": "https://t.me/example" },
+      { "platform": "email", "url": "mailto:hello@example.com" }
+    ]
   }
 }
 ```
@@ -1298,7 +1309,7 @@ accessible 字段指示未认证用户是否可以完整访问内容。
       "cover_image": "/files/uuid/cover.jpg",
       "required_tier": 0,
       "accessible": true,
-      "created_at": 1700000000,
+      "publish_at": 1700000000,
       "updated_at": 1700000000
     },
     {
@@ -1307,7 +1318,7 @@ accessible 字段指示未认证用户是否可以完整访问内容。
       "cover_image": null,
       "required_tier": 2,
       "accessible": false,
-      "created_at": 1690000000,
+      "publish_at": 1690000000,
       "updated_at": 1690000000
     }
   ]
@@ -1320,12 +1331,12 @@ accessible 字段指示未认证用户是否可以完整访问内容。
 - `cover_image` (string|null) - Cover image path / 封面图片路径
 - `required_tier` (integer) - Minimum tier required to fully access / 完整访问所需的最低等级
 - `accessible` (boolean) - Whether unauthenticated users can fully access the article content / 未认证用户是否可以完整访问文章内容
-- `created_at` (integer) - Creation timestamp / 创建时间戳
+- `publish_at` (integer) - Publish timestamp / 发布时间戳
 - `updated_at` (integer) - Last update timestamp / 最后更新时间戳
 
 **Notes / 注意事项:**
-- The `content`, `is_public`, and `file_links` fields are intentionally excluded / `content`、`is_public` 和 `file_links` 字段被有意排除
-- Results are ordered by `created_at` descending / 结果按 `created_at` 降序排列
+- The `content`, `is_public`, `file_links`, and `created_at` fields are intentionally excluded / `content`、`is_public`、`file_links` 和 `created_at` 字段被有意排除
+- Results are ordered by `publish_at` descending / 结果按 `publish_at` 降序排列
 - `accessible = true` when `required_tier = 0`, meaning full content is available via detail endpoint / 当 `required_tier = 0` 时 `accessible = true`，表示可通过详情端点获取完整内容
 - `accessible = false` when `required_tier > 0`, meaning detail endpoint will return 403 Forbidden / 当 `required_tier > 0` 时 `accessible = false`，表示详情端点将返回 403 Forbidden
 
@@ -1399,7 +1410,7 @@ Returns 403 Forbidden if required_tier > 0.
         "url": "https://example.com/files/uuid/document.pdf"
       }
     ],
-    "created_at": 1700000000,
+    "publish_at": 1700000000,
     "updated_at": 1700000000
   }
 }
@@ -1412,7 +1423,7 @@ Returns 403 Forbidden if required_tier > 0.
 - `content` (string) - Article content (Markdown) / 文章内容（Markdown）
 - `required_tier` (integer) - Minimum tier required to access / 访问所需的最低等级
 - `file_links` (array) - File links with name and url / 包含名称和链接的文件链接数组
-- `created_at` (integer) - Creation timestamp / 创建时间戳
+- `publish_at` (integer) - Publish timestamp / 发布时间戳
 - `updated_at` (integer) - Last update timestamp / 最后更新时间戳
 
 **Error Responses / 错误响应:**
@@ -1545,7 +1556,7 @@ new_secret = SHA256(config.jwt.secret + random_uuid_v4())
 - Public articles (`is_public=1`): All users can see title and cover_image
 - Public + tier 0: All users can see full content
 - Private or tier > 0:
-  1. Query user_subscriptions where `start_date <= article.created_at <= end_date`
+  1. Query user_subscriptions where `start_date <= article.publish_at <= end_date`
   2. Get max tier from overlapping subscriptions
   3. Check `max_tier >= article.required_tier`
 

@@ -62,7 +62,7 @@ pub struct ArticleListItem {
     /// Whether user can fully access the article content.
     /// / 用户是否可以完整访问文章内容。
     pub accessible: bool,
-    pub created_at: i64,
+    pub publish_at: i64,
     pub updated_at: i64,
 }
 
@@ -98,7 +98,7 @@ impl Article {
             cover_image: self.cover_image.clone(),
             required_tier: self.required_tier,
             accessible,
-            created_at: self.created_at,
+            publish_at: self.publish_at,
             updated_at: self.updated_at,
         })
     }
@@ -161,9 +161,9 @@ pub async fn list_articles(
 
     // 3. 查询所有文章（公开文章和需要等级的文章都查询）
     let articles = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
          FROM articles
-         ORDER BY created_at DESC"
+         ORDER BY publish_at DESC"
     )
     .fetch_all(&state.pool)
     .await
@@ -174,7 +174,7 @@ pub async fn list_articles(
     for article in &articles {
         // 获取用户在文章发布时间的等级
         let user_tier_at_publish =
-            get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
 
         // 判断是否可以完整访问
         let can_access = user_tier_at_publish >= article.required_tier;
@@ -253,7 +253,7 @@ pub async fn get_article(
 
     // 4. 查询文章
     let article = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at FROM articles WHERE id = ?"
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at FROM articles WHERE id = ?"
     )
     .bind(article_id)
     .fetch_optional(&state.pool)
@@ -263,7 +263,7 @@ pub async fn get_article(
 
     // 5. 获取用户在文章发布时间的等级
     let user_tier_at_publish =
-        get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+        get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
 
     // 6. 检查访问权限：仅基于发布时间的等级，不考虑 is_public
     if user_tier_at_publish < article.required_tier {
@@ -301,7 +301,7 @@ pub async fn get_articles_page_count(
     let page_size = query.page_size.unwrap_or(20).max(1);
 
     let articles = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
          FROM articles"
     )
     .fetch_all(&state.pool)
@@ -365,9 +365,9 @@ pub async fn list_articles_paginated(
     // To implement `page` correctly with the memory filter:
 
     let articles = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
          FROM articles
-         ORDER BY created_at DESC"
+         ORDER BY publish_at DESC"
     )
     .fetch_all(&state.pool)
     .await
