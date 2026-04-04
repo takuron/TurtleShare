@@ -85,11 +85,14 @@ async fn create_article_success() {
         "https://example.com/files/uuid-456/data.csv"
     );
 
-    // created_at 和 updated_at 应该是合理的 Unix 时间戳
+    // created_at、updated_at 和 publish_at 应该是合理的 Unix 时间戳
     let created_at = data["created_at"].as_i64().unwrap();
     let updated_at = data["updated_at"].as_i64().unwrap();
+    let publish_at = data["publish_at"].as_i64().unwrap();
     assert!(created_at > 1_700_000_000);
     assert_eq!(created_at, updated_at);
+    // 未指定 publish_at 时默认与 created_at 相同
+    assert_eq!(publish_at, created_at);
 
     // 响应中不应包含数字 ID
     assert!(data["id"].is_null());
@@ -259,7 +262,7 @@ async fn list_articles_empty() {
     assert!(articles.is_empty());
 }
 
-/// 创建多篇文章后应全部返回，按 created_at 降序。
+/// 创建多篇文章后应全部返回，按 publish_at 降序。
 #[tokio::test]
 async fn list_articles_returns_all_ordered() {
     let server = common::TestServer::spawn().await;
@@ -279,13 +282,13 @@ async fn list_articles_returns_all_ordered() {
     let articles = body["data"].as_array().unwrap();
     assert_eq!(articles.len(), 3);
 
-    // 验证按 created_at 降序排列
-    let created_ats: Vec<i64> = articles
+    // 验证按 publish_at 降序排列
+    let publish_ats: Vec<i64> = articles
         .iter()
-        .map(|a| a["created_at"].as_i64().unwrap())
+        .map(|a| a["publish_at"].as_i64().unwrap())
         .collect();
-    assert!(created_ats[0] >= created_ats[1]);
-    assert!(created_ats[1] >= created_ats[2]);
+    assert!(publish_ats[0] >= publish_ats[1]);
+    assert!(publish_ats[1] >= publish_ats[2]);
 
     // 验证没有泄露数字 ID
     for article in articles {

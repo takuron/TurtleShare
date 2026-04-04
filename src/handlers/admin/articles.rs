@@ -31,6 +31,7 @@ pub struct AdminArticleListItem {
     pub cover_image: Option<String>,
     pub required_tier: i32,
     pub is_public: bool,
+    pub publish_at: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -61,6 +62,7 @@ impl Article {
             cover_image: self.cover_image.clone(),
             required_tier: self.required_tier,
             is_public: self.is_public,
+            publish_at: self.publish_at,
             created_at: self.created_at,
             updated_at: self.updated_at,
         })
@@ -69,17 +71,17 @@ impl Article {
 
 /// List all articles.
 ///
-/// Returns a list of all articles ordered by created_at descending.
+/// Returns a list of all articles ordered by publish_at descending.
 /// Excludes content and file_links from the response.
 //
 // // 列出所有文章。
 // //
-// // 返回按 created_at 降序排列的所有文章列表。
+// // 返回按 publish_at 降序排列的所有文章列表。
 // // 响应中不包含 content 和 file_links。
 pub async fn list_articles(State(state): State<AdminState>) -> Result<impl IntoResponse, AppError> {
-    // 查询所有文章，按创建时间降序排列
+    // 查询所有文章，按发布时间降序排列
     let articles = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at FROM articles ORDER BY created_at DESC"
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at FROM articles ORDER BY publish_at DESC"
     )
     .fetch_all(&state.pool)
     .await
@@ -113,7 +115,7 @@ pub async fn get_article(
 
     // 2. 查询文章
     let article = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at FROM articles WHERE id = ?"
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at FROM articles WHERE id = ?"
     )
     .bind(id)
     .fetch_optional(&state.pool)
@@ -160,9 +162,15 @@ pub async fn create_article(
     // 3. 序列化 file_links 为 JSON 字符串存储
     let file_links_json = serialize_file_links(&req.file_links);
 
-    // 4. 插入文章记录
+    // 4. 计算 publish_at：如果未提供或为负数，默认与 created_at 相同
+    let publish_at = match req.publish_at {
+        Some(ts) if ts >= 0 => ts,
+        _ => now,
+    };
+
+    // 5. 插入文章记录
     let id = sqlx::query(
-        "INSERT INTO articles (title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO articles (title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&req.title)
     .bind(&req.cover_image)
@@ -170,6 +178,7 @@ pub async fn create_article(
     .bind(req.required_tier)
     .bind(req.is_public)
     .bind(&file_links_json)
+    .bind(publish_at)
     .bind(now)
     .bind(now)
     .execute(&state.pool)
@@ -185,6 +194,7 @@ pub async fn create_article(
         required_tier: req.required_tier,
         is_public: req.is_public,
         file_links: file_links_json,
+        publish_at,
         created_at: now,
         updated_at: now,
     };
@@ -215,7 +225,7 @@ pub async fn update_article(
 
     // 2. 查询现有文章
     let mut article = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at FROM articles WHERE id = ?"
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at FROM articles WHERE id = ?"
     )
     .bind(id)
     .fetch_optional(&state.pool)
@@ -256,6 +266,14 @@ pub async fn update_article(
     if let Some(file_links) = req.file_links {
         article.file_links = serialize_file_links(&file_links);
     }
+    // 更新 publish_at：如果为负数，重置为 created_at
+    if let Some(publish_at) = req.publish_at {
+        if publish_at < 0 {
+            article.publish_at = article.created_at;
+        } else {
+            article.publish_at = publish_at;
+        }
+    }
 
     // 4. 更新 updated_at 时间戳
     let now = SystemTime::now()
@@ -266,7 +284,7 @@ pub async fn update_article(
 
     // 5. 更新数据库
     sqlx::query(
-        "UPDATE articles SET title = ?, cover_image = ?, content = ?, required_tier = ?, is_public = ?, file_links = ?, updated_at = ? WHERE id = ?"
+        "UPDATE articles SET title = ?, cover_image = ?, content = ?, required_tier = ?, is_public = ?, file_links = ?, publish_at = ?, updated_at = ? WHERE id = ?"
     )
     .bind(&article.title)
     .bind(&article.cover_image)
@@ -274,6 +292,7 @@ pub async fn update_article(
     .bind(article.required_tier)
     .bind(article.is_public)
     .bind(&article.file_links)
+    .bind(article.publish_at)
     .bind(article.updated_at)
     .bind(id)
     .execute(&state.pool)
@@ -370,7 +389,7 @@ pub async fn list_articles_paginated(
     let offset = (page - 1) * page_size;
 
     let articles = sqlx::query_as::<_, Article>(
-        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, created_at, updated_at FROM articles ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at FROM articles ORDER BY publish_at DESC LIMIT ? OFFSET ?"
     )
     .bind(page_size)
     .bind(offset)

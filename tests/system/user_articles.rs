@@ -81,7 +81,7 @@ async fn create_subscription(
     );
 }
 
-/// 通过管理员 API 创建文章，返回 hash_id 和 created_at。
+/// 通过管理员 API 创建文章，返回 hash_id 和 publish_at。
 async fn create_test_article(
     server: &common::TestServer,
     admin_token: &str,
@@ -106,8 +106,8 @@ async fn create_test_article(
     assert_eq!(resp.status(), 201, "Failed to create article {}", title);
     let body: Value = resp.json().await.unwrap();
     let hash_id = body["data"]["hash_id"].as_str().unwrap().to_string();
-    let created_at = body["data"]["created_at"].as_i64().unwrap();
-    (hash_id, created_at)
+    let publish_at = body["data"]["publish_at"].as_i64().unwrap();
+    (hash_id, publish_at)
 }
 
 // ============================================================
@@ -181,21 +181,22 @@ async fn list_articles_excludes_detail_fields() {
     assert!(article["title"].is_string());
     assert!(article["required_tier"].is_i64());
     assert!(!article["accessible"].is_null());
-    assert!(article["created_at"].is_i64());
+    assert!(article["publish_at"].is_i64());
     assert!(article["updated_at"].is_i64());
 
     // 不应包含的字段
     assert!(article["content"].is_null());
     assert!(article["is_public"].is_null());
     assert!(article["file_links"].is_null());
+    assert!(article["created_at"].is_null());
 
     // ID 不应泄露
     assert!(article["id"].is_null());
 }
 
-/// 文章列表应按 created_at 降序排列。
+/// 文章列表应按 publish_at 降序排列。
 #[tokio::test]
-async fn list_articles_ordered_by_created_at_desc() {
+async fn list_articles_ordered_by_publish_at_desc() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
@@ -218,12 +219,12 @@ async fn list_articles_ordered_by_created_at_desc() {
     assert_eq!(articles.len(), 3);
 
     // 验证降序排列
-    let created_ats: Vec<i64> = articles
+    let publish_ats: Vec<i64> = articles
         .iter()
-        .map(|a| a["created_at"].as_i64().unwrap())
+        .map(|a| a["publish_at"].as_i64().unwrap())
         .collect();
-    assert!(created_ats[0] >= created_ats[1]);
-    assert!(created_ats[1] >= created_ats[2]);
+    assert!(publish_ats[0] >= publish_ats[1]);
+    assert!(publish_ats[1] >= publish_ats[2]);
 }
 
 // ============================================================
@@ -446,11 +447,12 @@ async fn get_article_detail_accessible() {
     assert_eq!(data["required_tier"], 2);
 
     // 应包含所有详情字段
-    assert!(data["created_at"].is_i64());
+    assert!(data["publish_at"].is_i64());
     assert!(data["updated_at"].is_i64());
     assert!(data["file_links"].is_array());
 
-    // 不应泄露数字 ID
+    // 不应包含 created_at 和数字 ID
+    assert!(data["created_at"].is_null());
     assert!(data["id"].is_null());
 }
 

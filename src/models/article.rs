@@ -40,6 +40,7 @@ pub struct Article {
     /// Stored as JSON string in DB, parsed to Vec<FileLink> in API responses.
     /// / 在数据库中存储为 JSON 字符串，在 API 响应中解析为 Vec<FileLink>。
     pub file_links: Option<String>,
+    pub publish_at: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -63,6 +64,7 @@ pub struct ArticleResponse {
     pub is_public: bool,
     /// Structured file links array / 结构化文件链接数组
     pub file_links: Vec<FileLink>,
+    pub publish_at: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -82,7 +84,7 @@ pub struct ClientArticleDetailResponse {
     pub content: String,
     pub required_tier: i32,
     pub file_links: Vec<FileLink>,
-    pub created_at: i64,
+    pub publish_at: i64,
     pub updated_at: i64,
 }
 
@@ -118,6 +120,7 @@ impl Article {
             required_tier: self.required_tier,
             is_public: self.is_public,
             file_links: self.parse_file_links()?,
+            publish_at: self.publish_at,
             created_at: self.created_at,
             updated_at: self.updated_at,
         })
@@ -137,7 +140,7 @@ impl Article {
             content: self.content.clone(),
             required_tier: self.required_tier,
             file_links: self.parse_file_links()?,
-            created_at: self.created_at,
+            publish_at: self.publish_at,
             updated_at: self.updated_at,
         })
     }
@@ -176,6 +179,9 @@ pub struct CreateArticleRequest {
     /// File links array, each with name and absolute url / 文件链接数组，每个包含名称和绝对链接
     #[serde(default)]
     pub file_links: Vec<FileLink>,
+    /// Publish timestamp for access control. If negative, defaults to created_at.
+    /// / 用于访问控制的发布时间戳。如果为负数，默认与 created_at 相同。
+    pub publish_at: Option<i64>,
 }
 
 /// Request payload for updating an existing article.
@@ -199,4 +205,7 @@ pub struct UpdateArticleRequest {
     pub is_public: Option<bool>,
     /// Optional new file links array / 可选的新文件链接数组
     pub file_links: Option<Vec<FileLink>>,
+    /// Optional new publish timestamp. If negative, resets to created_at.
+    /// / 可选的新发布时间戳。如果为负数，重置为 created_at。
+    pub publish_at: Option<i64>,
 }

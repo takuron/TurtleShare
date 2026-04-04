@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS articles (
     required_tier INTEGER NOT NULL DEFAULT 0,
     is_public INTEGER NOT NULL DEFAULT 0,
     file_links TEXT,
+    publish_at INTEGER NOT NULL,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
 );
