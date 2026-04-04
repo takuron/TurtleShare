@@ -74,3 +74,4 @@
 [2026-04-03T18:05:43+08:00] Removed unused AppError variants Auth and Network from src/error.rs to fix dead_code warnings.
 [2026-04-03T18:08:35+08:00] Added GitHub CI workflow (.github/workflows/ci.yml): build job for all branches (warnings allowed), integration-test job triggered only on push to main (RUSTFLAGS=-D warnings).
 [2026-04-03T18:14:45+08:00] Updated CI workflow: replaced actions/cache with Swatinem/rust-cache for better caching; made build and integration-test mutually exclusive via if conditions so tests only run once per push.
+[2026-04-04T15:32:41+08:00] Updated siteinfo config format: replaced sponsor_link/header_image/base_url with avatar/bio/social_links to match frontend requirements. Updated config.toml, docs/configuration.md, docs/api.md, and llm_readme.md.

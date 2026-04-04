@@ -38,12 +38,28 @@ min_length = 6  # Minimum length of encoded user IDs / 编码用户 ID 的最小
 # 支持的 TOML 值类型：字符串、整数、浮点数、布尔值、数组、内联表。
 name = "TurtleShare"
 author = "Admin"
-sponsor_link = ""
-header_image = ""
-# Example custom fields / 自定义字段示例:
-# theme_color = "#3498db"
-# show_upload_button = true
-# custom_footer = "Powered by TurtleShare"
+avatar = ""
+bio = "Admin"
+
+[[siteinfo.social_links]]
+platform = "github"
+url = "https://github.com/example"
+
+[[siteinfo.social_links]]
+platform = "x"
+url = "https://x.com/example"
+
+[[siteinfo.social_links]]
+platform = "bilibili"
+url = "https://space.bilibili.com/12345"
+
+[[siteinfo.social_links]]
+platform = "telegram"
+url = "https://t.me/example"
+
+[[siteinfo.social_links]]
+platform = "email"
+url = "mailto:hello@example.com"
 ```
 
 ## Config Structure / 配置结构

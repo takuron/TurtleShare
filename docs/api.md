@@ -1264,9 +1264,15 @@ The response shape is fully controlled by the configuration file — any keys ad
   "data": {
     "name": "TurtleShare",
     "author": "Admin",
-    "sponsor_link": "",
-    "header_image": "",
-    "theme_color": "#3498db"
+    "avatar": "",
+    "bio": "Admin",
+    "social_links": [
+      { "platform": "github", "url": "https://github.com/example" },
+      { "platform": "x", "url": "https://x.com/example" },
+      { "platform": "bilibili", "url": "https://space.bilibili.com/12345" },
+      { "platform": "telegram", "url": "https://t.me/example" },
+      { "platform": "email", "url": "mailto:hello@example.com" }
+    ]
   }
 }
 ```

@@ -6,7 +6,7 @@
 - [x] Implement config.rs to load TOML configuration
 - [x] Add ServerConfig with base_url field
 - [x] Add StorageConfig with max_upload_size_mb field
-- [x] Add SiteInfoConfig struct (name, author, sponsor_link, header_image)
+- [x] Add SiteInfoConfig struct (name, author, avatar, bio, social_links)
 - [x] Validate configuration on startup
 
 ### Database / 数据库
