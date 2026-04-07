@@ -98,10 +98,7 @@ impl TestServer {
             .env("RUST_LOG", "warn")
             .spawn()
             .unwrap_or_else(|e| {
-                panic!(
-                    "Failed to start TurtleShare binary at {:?}: {}",
-                    binary, e
-                )
+                panic!("Failed to start TurtleShare binary at {:?}: {}", binary, e)
             });
 
         let base_url = format!("http://127.0.0.1:{}", port);
@@ -153,11 +150,7 @@ impl TestServer {
     /// Sends a POST request with JSON body to the given path.
     //
     // // 向给定路径发送带 JSON 请求体的 POST 请求。
-    pub async fn post_json(
-        &self,
-        path: &str,
-        body: &serde_json::Value,
-    ) -> reqwest::Response {
+    pub async fn post_json(&self, path: &str, body: &serde_json::Value) -> reqwest::Response {
         self.client
             .post(self.url(path))
             .json(body)
@@ -169,11 +162,7 @@ impl TestServer {
     /// Sends a PUT request with JSON body to the given path.
     //
     // // 向给定路径发送带 JSON 请求体的 PUT 请求。
-    pub async fn put_json(
-        &self,
-        path: &str,
-        body: &serde_json::Value,
-    ) -> reqwest::Response {
+    pub async fn put_json(&self, path: &str, body: &serde_json::Value) -> reqwest::Response {
         self.client
             .put(self.url(path))
             .json(body)
@@ -196,11 +185,7 @@ impl TestServer {
     /// Sends a GET request with an Authorization Bearer token.
     //
     // // 发送带 Authorization Bearer 令牌的 GET 请求。
-    pub async fn get_with_token(
-        &self,
-        path: &str,
-        token: &str,
-    ) -> reqwest::Response {
+    pub async fn get_with_token(&self, path: &str, token: &str) -> reqwest::Response {
         self.client
             .get(self.url(path))
             .bearer_auth(token)
@@ -248,11 +233,7 @@ impl TestServer {
     /// Sends a DELETE request with Bearer token.
     //
     // // 发送带 Bearer 令牌的 DELETE 请求。
-    pub async fn delete_with_token(
-        &self,
-        path: &str,
-        token: &str,
-    ) -> reqwest::Response {
+    pub async fn delete_with_token(&self, path: &str, token: &str) -> reqwest::Response {
         self.client
             .delete(self.url(path))
             .bearer_auth(token)
@@ -289,11 +270,7 @@ impl TestServer {
     /// Logs in as admin with custom credentials and returns the JWT token.
     //
     // // 使用自定义凭据以管理员身份登录并返回 JWT 令牌。
-    pub async fn admin_login_with(
-        &self,
-        username: &str,
-        password: &str,
-    ) -> String {
+    pub async fn admin_login_with(&self, username: &str, password: &str) -> String {
         let resp = self
             .post_json(
                 "/api/admin/login",
@@ -355,6 +332,7 @@ pub struct TestConfig {
     pub jwt_rotation_days: u64,
     pub hashid_min_length: usize,
     pub max_upload_size_mb: u64,
+    pub cors_origins: Vec<String>,
     /// Raw TOML content for the `[siteinfo]` section.
     /// If `None`, a default section with `name` and `author` is generated.
     //
@@ -374,6 +352,7 @@ impl Default for TestConfig {
             jwt_rotation_days: 30,
             hashid_min_length: 6,
             max_upload_size_mb: 10,
+            cors_origins: Vec::new(),
             siteinfo_toml: None,
         }
     }
@@ -394,6 +373,20 @@ impl TestConfig {
         let db_str = db_path.to_str().unwrap().replace('\\', "/");
         let files_str = files_path.to_str().unwrap().replace('\\', "/");
         let static_str = static_path.to_str().unwrap().replace('\\', "/");
+        let cors_origins = if self.cors_origins.is_empty() {
+            "[]".to_string()
+        } else {
+            let values = self
+                .cors_origins
+                .iter()
+                .map(|origin| {
+                    let escaped = origin.replace('\\', "\\\\").replace('"', "\\\"");
+                    format!("\"{}\"", escaped)
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("[{}]", values)
+        };
 
         // 使用自定义 siteinfo 或默认值
         let siteinfo_section = match &self.siteinfo_toml {
@@ -417,6 +410,7 @@ password_hash = "{admin_password_hash}"
 host = "127.0.0.1"
 port = {port}
 base_url = "http://127.0.0.1:{port}"
+cors_origins = {cors_origins}
 
 [database]
 path = "{db_path}"
@@ -440,6 +434,7 @@ min_length = {hashid_min_length}
             admin_password_hash = self.admin_password_hash,
             port = port,
             db_path = db_str,
+            cors_origins = cors_origins,
             static_path = static_str,
             files_path = files_str,
             max_upload_size_mb = self.max_upload_size_mb,

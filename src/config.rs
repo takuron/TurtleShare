@@ -1,7 +1,7 @@
+use crate::error::{AppError, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use crate::error::{AppError, Result};
 
 /// The root configuration structure for TurtleShare.
 ///
@@ -38,6 +38,11 @@ pub struct ServerConfig {
     pub host: String,
     pub port: u16,
     pub base_url: String,
+    /// Allowed CORS origins. Empty means only same-origin requests are allowed.
+    //
+    // // 允许的 CORS 源列表。为空时表示仅允许同源请求。
+    #[serde(default)]
+    pub cors_origins: Vec<String>,
 }
 
 /// Database configuration.

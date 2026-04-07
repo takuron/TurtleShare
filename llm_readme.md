@@ -93,7 +93,7 @@ To ensure consistency and maintainability when using an LLM for development, the
 See `docs/configuration.md` for complete configuration details.
 
 Key configuration sections:
-- `[server]` - Server settings including `base_url`
+- `[server]` - Server settings including `base_url` and `cors_origins`
 - `[storage]` - File storage settings including `max_upload_size_mb` (default: 1024MB)
 - `[siteinfo]` - Site information forwarded verbatim to the public API (supports `name`, `author`, `avatar`, `bio`, `social_links` array of `{platform, url}` objects, and any additional key-value pairs)
 

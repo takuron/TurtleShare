@@ -1,11 +1,11 @@
-// Main router assembly
-//
-// // 主路由组装器
+// Main router assembly.
 
 use super::admin;
 use super::public;
 use super::user;
 use crate::config::Config;
+use crate::error::Result;
+use crate::middleware::cors::{CorsPolicy, enforce_cors};
 use crate::middleware::rate_limiter::global_rate_limit;
 use crate::utils::{hashid::HashIdManager, jwt::JwtManager, rate_limiter::RateLimiter};
 use axum::{
@@ -15,18 +15,28 @@ use axum::{
 use std::sync::Arc;
 
 /// Creates the main application router by combining all sub-routers.
-//
-// // 通过组合所有子路由器创建主应用程序路由器。
+///
+/// # Arguments
+/// * `config` - The loaded application configuration.
+/// * `jwt_manager` - Shared JWT manager used by authentication middleware.
+/// * `hashid_manager` - Shared HashID manager for external IDs.
+/// * `pool` - Shared SQLite connection pool.
+///
+/// # Returns
+/// Returns the fully configured Axum `Router`.
+///
+/// # Errors
+/// Returns `AppError::Config` if the CORS configuration derived from
+/// `config.server` is invalid.
 pub fn create_router(
     config: Config,
     jwt_manager: Arc<JwtManager>,
     hashid_manager: Arc<HashIdManager>,
     pool: sqlx::SqlitePool,
-) -> Router {
-    // 1. 创建全局限流器（每IP每1分钟最多100次请求）
+) -> Result<Router> {
     let global_limiter = Arc::new(RateLimiter::new(60, 100));
+    let cors_policy = Arc::new(CorsPolicy::from_server_config(&config.server)?);
 
-    // 2. 创建管理员状态（5分钟内最多10次请求）
     let admin_state = admin::AdminState {
         admin_config: config.admin.clone(),
         jwt_manager: jwt_manager.clone(),
@@ -38,7 +48,6 @@ pub fn create_router(
         base_url: config.server.base_url.clone(),
     };
 
-    // 3. 创建用户状态（5分钟内最多10次请求）
     let user_state = user::UserState {
         jwt_manager: jwt_manager.clone(),
         hashid_manager: hashid_manager.clone(),
@@ -46,7 +55,6 @@ pub fn create_router(
         pool: pool.clone(),
     };
 
-    // 3. 管理员保护路由（需要管理员 JWT）
     let admin_protected = Router::new()
         .route(
             "/users",
@@ -111,7 +119,6 @@ pub fn create_router(
         ))
         .with_state(admin_state.clone());
 
-    // 4. 用户保护路由（需要用户 JWT）
     let user_protected = Router::new()
         .route("/password", put(user::operations::change_password))
         .route(
@@ -134,31 +141,25 @@ pub fn create_router(
         ))
         .with_state(user_state.clone());
 
-    // 4. 组合所有 API 路由并应用全局限流
     let api_router = Router::new()
-        // 5. 管理员登录路由
         .route("/api/admin/login", post(admin::auth::admin_login))
         .with_state(admin_state.clone())
-        // 6. 保护的管理员路由
         .nest("/api/admin", admin_protected)
-        // 7. 用户登录路由
         .route("/api/users/login", post(user::auth::user_login))
         .with_state(user_state.clone())
-        // 8. 保护的用户路由
         .nest("/api/users", user_protected)
-        // 9. 公共路由
         .merge(public::api::routes(config.siteinfo, pool, hashid_manager))
-        // 10. 注入限流器到 Extension 并应用限流中间件
-        // 注意：axum 中后添加的 layer 是外层（先执行），
-        // Extension 必须在外层先注入，global_rate_limit 才能提取到它
         .layer(axum::middleware::from_fn(global_rate_limit))
         .layer(Extension(global_limiter));
 
-    // 11. 组合 API 路由和静态文件路由
-    Router::new()
+    Ok(Router::new()
         .merge(api_router)
         .merge(super::static_files::routes(
             config.storage.static_path,
             config.storage.files_path,
         ))
+        .layer(axum::middleware::from_fn_with_state(
+            cors_policy,
+            enforce_cors,
+        )))
 }
