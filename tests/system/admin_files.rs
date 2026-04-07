@@ -140,14 +140,13 @@ async fn upload_binary_file() {
     assert_eq!(sha256_hex(&downloaded), expected_sha256);
 }
 
-/// 上传空文件应成功（file_size = 0），且可通过静态路径下载并校验。
+/// 上传空文件应返回 400（空文件被拒绝）。
 #[tokio::test]
 async fn upload_empty_file() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
     let empty_content: Vec<u8> = vec![];
-    let expected_sha256 = sha256_hex(&empty_content);
 
     let part = multipart::Part::bytes(empty_content.clone())
         .file_name("empty.txt".to_string())
@@ -159,18 +158,9 @@ async fn upload_empty_file() {
         .post_multipart_with_token("/api/admin/files", form, &token)
         .await;
 
-    assert_eq!(resp.status(), 201);
+    assert_eq!(resp.status(), 400);
     let body: Value = resp.json().await.unwrap();
-    assert_eq!(body["data"]["file_size"], 0);
-    assert_eq!(body["data"]["original_name"], "empty.txt");
-
-    // 通过静态路径下载空文件并校验
-    let uuid = body["data"]["uuid"].as_str().unwrap();
-    let download_resp = server.get(&format!("/files/{}/empty.txt", uuid)).await;
-    assert_eq!(download_resp.status(), 200);
-    let downloaded = download_resp.bytes().await.unwrap();
-    assert_eq!(downloaded.len(), 0);
-    assert_eq!(sha256_hex(&downloaded), expected_sha256);
+    assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
 }
 
 /// 超过大小限制的文件应返回 400。

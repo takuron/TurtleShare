@@ -13,6 +13,7 @@ use axum::{
     response::IntoResponse,
 };
 use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::io::AsyncWriteExt;
 use uuid::Uuid;
 
 /// List all files.
@@ -104,10 +105,10 @@ pub async fn upload_file(
     State(state): State<AdminState>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
-    // 1. 从 multipart 表单中提取文件字段
-    let mut file_data: Option<(String, Vec<u8>)> = None;
+    // 1. 从 multipart 表单中提取文件字段，流式写入临时文件
+    let mut upload_info: Option<(String, std::path::PathBuf, u64)> = None;
 
-    while let Some(field) = multipart
+    while let Some(mut field) = multipart
         .next_field()
         .await
         .map_err(|e| AppError::ValidationError(format!("Invalid multipart data: {}", e)))?
@@ -125,45 +126,91 @@ pub async fn upload_file(
                 .unwrap_or("unnamed")
                 .to_string();
 
-            // 读取文件内容
-            let data = field
-                .bytes()
-                .await
-                .map_err(|e| AppError::ValidationError(format!("Failed to read file: {}", e)))?;
+            // 在 data 目录下创建临时文件
+            let temp_name = format!(".upload_tmp_{}", Uuid::new_v4());
+            let temp_path = std::path::Path::new(&state.files_path).join(&temp_name);
 
-            file_data = Some((original_name, data.to_vec()));
+            let mut temp_file = tokio::fs::File::create(&temp_path)
+                .await
+                .map_err(|e| AppError::Internal(format!("Failed to create temp file: {}", e)))?;
+
+            // 流式读取并写入，逐 chunk 计数
+            let mut total_size: u64 = 0;
+            let max_bytes = state.max_upload_size_bytes;
+
+            loop {
+                match field.chunk().await {
+                    Ok(Some(chunk)) => {
+                        total_size += chunk.len() as u64;
+                        if total_size > max_bytes {
+                            // 超限：关闭并删除临时文件
+                            drop(temp_file);
+                            let _ = tokio::fs::remove_file(&temp_path).await;
+                            let max_mb = max_bytes / (1024 * 1024);
+                            return Err(AppError::ValidationError(format!(
+                                "File size exceeds maximum allowed size of {} MB",
+                                max_mb
+                            )));
+                        }
+                        temp_file.write_all(&chunk).await.map_err(|e| {
+                            AppError::Internal(format!("Failed to write temp file: {}", e))
+                        })?;
+                    }
+                    Ok(None) => break, // 传输完成
+                    Err(e) => {
+                        // 传输错误：清理临时文件
+                        drop(temp_file);
+                        let _ = tokio::fs::remove_file(&temp_path).await;
+                        return Err(AppError::ValidationError(format!(
+                            "Failed to read file: {}",
+                            e
+                        )));
+                    }
+                }
+            }
+
+            temp_file.flush().await.map_err(|e| {
+                AppError::Internal(format!("Failed to flush temp file: {}", e))
+            })?;
+            drop(temp_file);
+
+            upload_info = Some((original_name, temp_path, total_size));
             break;
         }
     }
 
-    let (original_name, data) =
-        file_data.ok_or_else(|| AppError::ValidationError("No file field provided".to_string()))?;
+    let (original_name, temp_path, file_size) =
+        upload_info.ok_or_else(|| AppError::ValidationError("No file field provided".to_string()))?;
 
-    // 2. 验证文件大小
-    let file_size = data.len() as u64;
-    if file_size > state.max_upload_size_bytes {
-        let max_mb = state.max_upload_size_bytes / (1024 * 1024);
-        return Err(AppError::ValidationError(format!(
-            "File size exceeds maximum allowed size of {} MB",
-            max_mb
-        )));
+    if file_size == 0 {
+        let _ = tokio::fs::remove_file(&temp_path).await;
+        return Err(AppError::ValidationError(
+            "Uploaded file is empty".to_string(),
+        ));
     }
 
-    // 3. 生成 UUID v4 作为文件目录名
+    // 2. 上传完成，将临时文件移动到最终位置
     let file_uuid = Uuid::new_v4().to_string();
-
-    // 4. 创建目录并写入文件
     let dir_path = std::path::Path::new(&state.files_path).join(&file_uuid);
     tokio::fs::create_dir_all(&dir_path)
         .await
         .map_err(|e| AppError::Internal(format!("Failed to create directory: {}", e)))?;
 
-    let file_path = dir_path.join(&original_name);
-    tokio::fs::write(&file_path, &data)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to write file: {}", e)))?;
+    let final_path = dir_path.join(&original_name);
+    if let Err(e) = tokio::fs::rename(&temp_path, &final_path).await {
+        // rename 可能跨文件系统失败，回退到 copy + delete
+        if let Err(copy_err) = tokio::fs::copy(&temp_path, &final_path).await {
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            let _ = tokio::fs::remove_dir_all(&dir_path).await;
+            return Err(AppError::Internal(format!(
+                "Failed to move file: rename={}, copy={}",
+                e, copy_err
+            )));
+        }
+        let _ = tokio::fs::remove_file(&temp_path).await;
+    }
 
-    // 5. 插入数据库记录
+    // 3. 插入数据库记录
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()

@@ -10,6 +10,7 @@ use crate::middleware::rate_limiter::global_rate_limit;
 use crate::utils::{hashid::HashIdManager, jwt::JwtManager, rate_limiter::RateLimiter};
 use axum::{
     Extension, Router,
+    extract::DefaultBodyLimit,
     routing::{get, post, put},
 };
 use std::sync::Arc;
@@ -54,6 +55,8 @@ pub fn create_router(
         rate_limiter: RateLimiter::new(300, 10),
         pool: pool.clone(),
     };
+
+    let max_upload_bytes = admin_state.max_upload_size_bytes as usize;
 
     let admin_protected = Router::new()
         .route(
@@ -117,6 +120,7 @@ pub fn create_router(
             jwt_manager.clone(),
             crate::middleware::auth::require_admin,
         ))
+        .layer(DefaultBodyLimit::max(max_upload_bytes))
         .with_state(admin_state.clone());
 
     let user_protected = Router::new()
