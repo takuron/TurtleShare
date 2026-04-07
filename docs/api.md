@@ -20,6 +20,28 @@ All API endpoints are protected by a global rate limiter.
 }
 ```
 
+## CORS / 跨域访问控制
+
+All HTTP endpoints, including `/api/*`, `/files/*`, and frontend static file responses, are protected by a global CORS policy.
+所有 HTTP 端点，包括 `/api/*`、`/files/*` 以及前端静态文件响应，都会经过统一的全局 CORS 策略校验。
+
+- **Same-origin**: Requests whose `Origin` matches `server.base_url` are always allowed. / **同源请求**：`Origin` 与 `server.base_url` 对应来源一致的请求始终允许。
+- **Whitelist**: Extra allowed cross-origin requests are configured via `server.cors_origins` in `config.toml`. / **白名单**：额外允许的跨域来源通过 `config.toml` 中的 `server.cors_origins` 配置。
+- **Default Behavior**: If `server.cors_origins` is empty, only same-origin requests are allowed. / **默认行为**：如果 `server.cors_origins` 为空，则仅允许同源请求。
+- **Preflight**: Allowed CORS preflight requests return `204 No Content` and include `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, and `Access-Control-Allow-Headers`. / **预检请求**：被允许的 CORS 预检请求会返回 `204 No Content`，并携带 `Access-Control-Allow-Origin`、`Access-Control-Allow-Methods` 和 `Access-Control-Allow-Headers`。
+- **Rejected Origins**: Requests with a disallowed `Origin` are rejected with `403 Forbidden` and error code `FORBIDDEN`. / **拒绝来源**：带有未授权 `Origin` 的请求会被直接拒绝，返回 `403 Forbidden` 和错误码 `FORBIDDEN`。
+
+**Rejected Origin Response / 拒绝来源响应:** `403 Forbidden`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "CORS origin is not allowed"
+  }
+}
+```
+
 ---
 
 ## Admin Endpoints / 管理员端点

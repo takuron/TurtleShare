@@ -77,3 +77,6 @@
 [2026-04-04T15:32:41+08:00] Updated siteinfo config format: replaced sponsor_link/header_image/base_url with avatar/bio/social_links to match frontend requirements. Updated config.toml, docs/configuration.md, docs/api.md, and llm_readme.md.
 [2026-04-04T18:25:07+08:00] Added publish_at field to articles: replaces created_at for access control, client-settable (negative value defaults to created_at), all article lists ordered by publish_at DESC, removed created_at from user/public API responses.
 [2026-04-04T18:34:56+08:00] Added 18 comprehensive system tests for publish_at field covering: create defaults/explicit/negative/zero, update explicit/negative-reset/preserve, ordering in admin/admin-paginated/user/public lists, user access control based on publish_at, and response field presence verification across admin/user/public endpoints.
+[2026-04-06T20:37:39+08:00] Condense English and Chinese READMEs to focus on basic quick start and correct the license text to AGPL v3.0.
+[2026-04-06T20:45:47+08:00] Expanded docs/configuration.md with bilingual comments for all config.toml options and added a full option reference section.
+[2026-04-07T17:03:58+08:00] Added global CORS enforcement with same-origin plus whitelist rules, config support, docs updates, and system tests.

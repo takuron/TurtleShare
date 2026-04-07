@@ -97,7 +97,7 @@
 
 ### Security / 安全
 - [x] Implement Argon2 password hashing
-- [ ] Add CORS configuration
+- [x] Add CORS configuration
 - [x] Prevent SQL injection (use parameterized queries)
 - [ ] Prevent directory traversal in file paths
 - [x] Add rate limiting (recommended for production)

@@ -1,14 +1,14 @@
 mod config;
 mod db;
-mod utils;
 mod error;
-mod models;
 mod handlers;
 mod middleware;
+mod models;
+mod utils;
 
 use crate::config::Config;
-use crate::utils::{hash, jwt::JwtManager, hashid::HashIdManager};
 use crate::handlers::create_router;
+use crate::utils::{hash, hashid::HashIdManager, jwt::JwtManager};
 use clap::{Parser, Subcommand};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -75,7 +75,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // 4. 加载配置文件。
     let config = Config::load(&args.config)?;
-    tracing::info!("Successfully loaded configuration for: {}", config.siteinfo.get("name").and_then(|v| v.as_str()).unwrap_or("TurtleShare"));
+    tracing::info!(
+        "Successfully loaded configuration for: {}",
+        config
+            .siteinfo
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("TurtleShare")
+    );
 
     // 5.1. 初始化数据库连接。
     let pool = db::init_db(&config.database.path, args.require_existing_db).await?;
@@ -88,14 +95,16 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             config.jwt.base_secret.clone(),
             config.jwt.expiry_hours,
             config.jwt.rotation_days,
-        ).await?
+        )
+        .await?,
     );
     tracing::info!("JWT manager initialized successfully.");
 
     // 5.3. 初始化HashID管理器。
-    let hashid_manager = Arc::new(
-        HashIdManager::new(&config.jwt.base_secret, config.hashid.min_length)?
-    );
+    let hashid_manager = Arc::new(HashIdManager::new(
+        &config.jwt.base_secret,
+        config.hashid.min_length,
+    )?);
     tracing::info!("HashID manager initialized successfully.");
 
     // 5.4. 启动JWT密钥轮换后台任务。
@@ -115,16 +124,23 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // 5.5. 确保存储目录存在。
     if !std::path::Path::new(&config.storage.files_path).exists() {
         std::fs::create_dir_all(&config.storage.files_path)?;
-        tracing::info!("Created storage directory at: {}", config.storage.files_path);
+        tracing::info!(
+            "Created storage directory at: {}",
+            config.storage.files_path
+        );
     }
 
     // 6. 定义路由。
-    let app = create_router(config.clone(), jwt_manager.clone(), hashid_manager.clone(), pool.clone())
-        .into_make_service_with_connect_info::<SocketAddr>();
+    let app = create_router(
+        config.clone(),
+        jwt_manager.clone(),
+        hashid_manager.clone(),
+        pool.clone(),
+    )?
+    .into_make_service_with_connect_info::<SocketAddr>();
 
     // 7. 启动服务器。
-    let addr = format!("{}:{}", config.server.host, config.server.port)
-        .parse::<SocketAddr>()?;
+    let addr = format!("{}:{}", config.server.host, config.server.port).parse::<SocketAddr>()?;
 
     tracing::info!("Server starting at http://{}", addr);
 
