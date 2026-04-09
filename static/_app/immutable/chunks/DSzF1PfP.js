@@ -1,0 +1,1 @@
+import{g as e}from"./iJHgI-4A.js";const r=()=>"No articles yet.",c=()=>"暂无文章。",i=((t={},n={})=>(n.locale??e())==="en"?r():c()),l=()=>"Loading...",a=()=>"加载中…",_=((t={},n={})=>(n.locale??e())==="en"?l():a());export{_ as l,i as n};

@@ -1,0 +1,1 @@
+function r(t){return new Date(t*1e3).toLocaleDateString(void 0,{year:"numeric",month:"short",day:"numeric"})}function c(t){const e=new Date(t*1e3),a=e.getFullYear(),n=String(e.getMonth()+1).padStart(2,"0"),o=String(e.getDate()).padStart(2,"0");return`${a}-${n}-${o}`}export{c as a,r as f};
