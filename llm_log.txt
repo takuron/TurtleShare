@@ -81,3 +81,4 @@
 [2026-04-06T20:45:47+08:00] Expanded docs/configuration.md with bilingual comments for all config.toml options and added a full option reference section.
 [2026-04-07T17:03:58+08:00] Added global CORS enforcement with same-origin plus whitelist rules, config support, docs updates, and system tests.
 [2026-04-07T19:59:04+08:00] Fixed max_upload_size_mb not taking effect: added DefaultBodyLimit layer to admin routes so Axum allows request bodies up to the configured limit. Refactored upload_file handler from in-memory buffering to streaming writes via temp file (.upload_tmp_{uuid}) in the data directory, preventing OOM on large uploads. File is moved to final location only after complete upload and validation. Empty file uploads are now rejected. Updated upload_empty_file test to match new behavior.
+[2026-04-09T13:16:25+08:00] Added GET /api/users/tier?at=<timestamp> endpoint for users to query their own subscription tier at a specific time.

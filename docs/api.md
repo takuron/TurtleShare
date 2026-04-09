@@ -1094,6 +1094,31 @@ Get own subscriptions endpoint. Returns a list of subscription periods for the a
 
 ---
 
+### GET /api/users/tier?at=<timestamp>
+Get own subscription tier at a specific time. If `at` is omitted, defaults to the current time.
+
+查询自身在特定时间的订阅等级。如果省略 `at`，则默认为当前时间。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Query Parameters / 查询参数:**
+- `at` (integer, optional) - Unix timestamp (e.g., `1710928800`) / Unix 时间戳（例如 `1710928800`）
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "tier": 2
+  }
+}
+```
+
+**Response Fields / 响应字段:**
+- `tier` (integer) - Maximum subscription tier at the specified time (0 if no active subscription) / 指定时间的最高订阅等级（无活跃订阅时为 0）
+
+---
+
 ### GET /api/users/articles
 List visible articles endpoint. Returns articles visible to the user based on their subscription tier at article publish time.
 

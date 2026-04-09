@@ -7,8 +7,9 @@ use crate::error::AppError;
 use crate::handlers::common::ApiResponse;
 use crate::middleware::auth::AuthClaims;
 use crate::utils::hash;
-use axum::{Json, extract::State, response::IntoResponse};
+use axum::{Json, extract::{Query, State}, response::IntoResponse};
 use serde::{Deserialize, Serialize};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Request payload for changing password.
 ///
@@ -207,5 +208,96 @@ pub async fn get_own_subscriptions(
     Ok(Json(ApiResponse {
         success: true,
         data: subscriptions,
+    }))
+}
+
+/// Query parameters for get_own_tier.
+//
+// // get_own_tier 的查询参数。
+#[derive(Deserialize)]
+pub struct TierQuery {
+    pub at: Option<i64>,
+}
+
+/// Response for get_own_tier.
+//
+// // get_own_tier 的响应。
+#[derive(Serialize)]
+pub struct TierResponse {
+    pub tier: i64,
+}
+
+/// Get own subscription tier handler.
+///
+/// Returns the authenticated user's subscription tier at a specific time.
+/// If `at` is omitted, defaults to the current time.
+///
+/// # Arguments
+/// * `state` - Application state containing database pool
+/// * `claims` - Authenticated user claims from JWT
+/// * `query` - Optional `at` query parameter (Unix timestamp)
+///
+/// # Returns
+/// Returns the user's tier (maximum tier from overlapping subscriptions).
+///
+/// # Errors
+/// Returns `Internal` error if token subject format is invalid.
+/// Returns `Database` error on database failures.
+//
+// // 获取自身订阅等级处理器。
+// //
+// // 返回已认证用户在特定时间的订阅等级。
+// // 如果省略 `at`，则默认为当前时间。
+// //
+// // # 参数
+// // * `state` - 包含数据库连接池的应用状态
+// // * `claims` - 来自 JWT 的已认证用户声明
+// // * `query` - 可选的 `at` 查询参数（Unix 时间戳）
+// //
+// // # 返回
+// // 返回用户的等级（重叠订阅中的最高等级）。
+// //
+// // # 错误
+// // 如果令牌主题格式无效，返回 `Internal` 错误。
+// // 数据库失败时返回 `Database` 错误。
+pub async fn get_own_tier(
+    State(state): State<UserState>,
+    claims: AuthClaims,
+    Query(query): Query<TierQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    // 1. 从 JWT sub 字段提取用户 hash_id（格式为 "user:<hash_id>"）
+    let user_hash_id = claims
+        .0
+        .sub
+        .strip_prefix("user:")
+        .ok_or_else(|| AppError::Internal("Invalid token subject format".to_string()))?;
+
+    // 2. 解码 hash_id 为数字 ID
+    let user_id = state.hashid_manager.decode(user_hash_id)?;
+
+    // 3. 确定查询时间点，默认为当前时间
+    let at = query.at.unwrap_or_else(|| {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64
+    });
+
+    // 4. 查询该时间点的最高订阅等级
+    let result: Option<(i64,)> = sqlx::query_as(
+        "SELECT MAX(tier) FROM user_subscriptions WHERE user_id = ? AND start_date <= ? AND end_date >= ?",
+    )
+    .bind(user_id)
+    .bind(at)
+    .bind(at)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let tier = result.map(|(t,)| t).unwrap_or(0);
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: TierResponse { tier },
     }))
 }
