@@ -129,6 +129,7 @@ pub fn create_router(
             "/subscriptions",
             get(user::operations::get_own_subscriptions),
         )
+        .route("/tier", get(user::operations::get_own_tier))
         .route("/articles", get(user::articles::list_articles))
         .route(
             "/articles/page",
