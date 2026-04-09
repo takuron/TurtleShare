@@ -13,13 +13,18 @@ use std::sync::Arc;
 /// Applies a sliding window rate limit of 100 requests per 1 minute per IP address
 /// to all API endpoints.
 ///
+/// The client IP is resolved in this order:
+/// 1. First non-empty token from the `X-Forwarded-For` header (set by most reverse proxies).
+/// 2. Value of the `X-Real-IP` header (set by nginx when configured).
+/// 3. TCP connection peer address as a final fallback.
+///
 /// Uses `Extension` instead of `State` to avoid conflicts with the router's primary
 /// state type, allowing this middleware to be layered on top of routes that use
 /// different state types (e.g., `AdminState`, `UserState`).
 ///
 /// # Arguments
 /// * `limiter` - Shared rate limiter state (passed via Extension)
-/// * `addr` - Client socket address
+/// * `addr` - Client socket address (TCP fallback)
 /// * `req` - Incoming HTTP request
 /// * `next` - Next middleware/handler in the chain
 ///
@@ -30,12 +35,17 @@ use std::sync::Arc;
 // //
 // // 对所有 API 端点应用每 IP 每 1 分钟最多 100 次请求的滑动窗口限制。
 // //
+// // 客户端 IP 按以下优先级解析：
+// // 1. X-Forwarded-For 头中第一个非空令牌（大多数反向代理会设置此头）。
+// // 2. X-Real-IP 头的值（nginx 配置后会设置此头）。
+// // 3. 最终回退到 TCP 连接的对端地址。
+// //
 // // 使用 `Extension` 而不是 `State` 以避免与路由器的主要状态类型冲突，
 // // 允许此中间件应用于使用不同状态类型（如 `AdminState`、`UserState`）的路由之上。
 // //
 // // # 参数
 // // * `limiter` - 共享的限流器状态（通过 Extension 传递）
-// // * `addr` - 客户端套接字地址
+// // * `addr` - 客户端套接字地址（TCP 回退）
 // // * `req` - 传入的 HTTP 请求
 // // * `next` - 链中的下一个中间件/处理器
 // //
@@ -47,15 +57,29 @@ pub async fn global_rate_limit(
     req: Request,
     next: Next,
 ) -> Result<Response, AppError> {
-    // 1. 提取客户端 IP 地址
-    let ip = addr.ip().to_string();
+    // 1. 优先读取 X-Forwarded-For 头，取第一个（最左侧）IP，即真实客户端 IP
+    let ip = req
+        .headers()
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.split(',').next())
+        .map(|s| s.trim().to_string())
+        // 2. 其次读取 X-Real-IP 头（nginx 等反代常用）
+        .or_else(|| {
+            req.headers()
+                .get("x-real-ip")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.trim().to_string())
+        })
+        // 3. 最终回退到 TCP 连接的对端 IP（直连场景）
+        .unwrap_or_else(|| addr.ip().to_string());
 
-    // 2. 检查限流状态
+    // 4. 检查限流状态
     if !limiter.check(&ip).await {
-        // 3. 如果超过限制，返回 429 错误
+        // 5. 超过限制，返回 429 错误
         return Err(AppError::TooManyRequests("Rate limit exceeded".to_string()));
     }
 
-    // 4. 继续处理请求
+    // 6. 继续处理请求
     Ok(next.run(req).await)
 }
