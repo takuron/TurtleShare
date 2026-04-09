@@ -1,0 +1,1 @@
+import{N as s}from"./SPs6ouwx.js";import{a as t,D as o}from"./J12E7jSd.js";function i(){return t("/public/site-info")}const r=s({info:o});async function a(){try{const e=await i();e.success?r.info={...o,...e.data}:(console.error("获取站点信息失败:",e.error.message),r.info=o)}catch(e){console.error("获取站点信息出错:",e),r.info=o}}export{a as f,r as s};
