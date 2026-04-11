@@ -7,5 +7,6 @@ pub mod users;
 pub mod subscriptions;
 pub mod articles;
 pub mod files;
+pub mod announcement;
 
 pub use auth::AdminState;

@@ -83,3 +83,13 @@ CREATE TABLE kv_store (
     updated_at INTEGER NOT NULL
 );
 ```
+
+### KV Store Keys / KV 存储键
+
+| Key | Description / 描述 |
+|-----|---------------------|
+| `db_version` | Database schema version number / 数据库架构版本号 |
+| `jwt_secret_current` | Current JWT signing secret (base64) / 当前 JWT 签名密钥 |
+| `jwt_secret_previous` | Previous JWT signing secret (base64, nullable) / 上一个 JWT 签名密钥 |
+| `jwt_secret_date` | Current secret creation time (Unix timestamp as string) / 当前密钥创建时间 |
+| `announcement` | Site announcement JSON: `{"content":"...","updated_at":1710928800}` / 站点公告 JSON |

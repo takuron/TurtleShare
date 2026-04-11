@@ -8,6 +8,7 @@ mod admin_auth;
 mod admin_files;
 mod admin_subscriptions;
 mod admin_users;
+mod announcement;
 mod common;
 mod cors;
 mod health_check;

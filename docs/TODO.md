@@ -117,3 +117,4 @@
 - [ ] Add article sorting options
 - [ ] Optimize database queries with indexes
 - [x] Add health check endpoint
+- [x] Add announcement publish (admin) and display (public) endpoints

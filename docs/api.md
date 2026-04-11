@@ -754,6 +754,49 @@ Delete an article from the database.
 }
 ```
 
+**Announcement / 公告管理**
+
+### PUT /api/admin/announcement
+Publish or update the site announcement. The announcement is stored as a JSON structure in the kv_store table.
+
+发布或更新站点公告。公告以 JSON 结构存储在 kv_store 表中。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Request Body / 请求体:**
+```json
+{
+  "content": "Site maintenance scheduled for Saturday."
+}
+```
+
+**Request Fields / 请求字段:**
+- `content` (string, required) - Announcement content in Markdown (must not be empty) / 公告内容（Markdown），不能为空
+
+**Success Response / 成功响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "content": "Site maintenance scheduled for Saturday.",
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Error Response / 错误响应:** `400 Bad Request`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "content must not be empty"
+  }
+}
+```
+
+---
+
 **Files / 文件管理**
 
 **Note / 注意:** All file IDs in API requests and responses use hash IDs (encoded strings) for security. Numeric IDs are never exposed. / 所有 API 请求和响应中的文件 ID 都使用哈希 ID（编码字符串）以保护安全。数字 ID 永远不会暴露。
@@ -1333,6 +1376,38 @@ The response shape is fully controlled by the configuration file — any keys ad
 The `data` object mirrors `[siteinfo]` in `config.toml` exactly. All TOML scalar types (string, integer, float, boolean), arrays, and inline tables are supported.
 
 `data` 对象与 `config.toml` 中的 `[siteinfo]` 完全对应。支持所有 TOML 标量类型（字符串、整数、浮点数、布尔值）、数组和内联表。
+
+---
+
+### GET /api/public/announcement
+Returns the current site announcement. Returns null data if no announcement has been published.
+
+返回当前站点公告。如果尚未发布公告，则返回 null 数据。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Response / 响应 (with announcement / 有公告时):** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "content": "Site maintenance scheduled for Saturday.",
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Response / 响应 (no announcement / 无公告时):** `200 OK`
+```json
+{
+  "success": true,
+  "data": null
+}
+```
+
+**Response Fields / 响应字段:**
+- `content` (string) - Announcement content in Markdown / 公告内容（Markdown）
+- `updated_at` (integer) - Unix timestamp of the last update / 最后更新的 Unix 时间戳
 
 ---
 

@@ -22,11 +22,13 @@ src/
 │   │   ├── users.rs           # Admin user management / 管理员用户管理
 │   │   ├── subscriptions.rs   # Admin subscription management / 管理员订阅管理
 │   │   ├── articles.rs        # Admin article management / 管理员文章管理
-│   │   └── files.rs           # Admin file management / 管理员文件管理
+│   │   ├── files.rs           # Admin file management / 管理员文件管理
+│   │   └── announcement.rs    # Admin announcement management / 管理员公告管理
 │   ├── public/
 │   │   ├── mod.rs             # Public module exports / 公开模块导出
 │   │   ├── api.rs             # Health check and site info / 健康检查与站点信息
-│   │   └── articles.rs        # Public article access / 公开文章访问
+│   │   ├── articles.rs        # Public article access / 公开文章访问
+│   │   └── announcement.rs    # Public announcement access / 公开公告访问
 │   └── user/
 │       ├── mod.rs             # User module exports / 用户模块导出
 │       ├── auth.rs            # User login / 用户登录
@@ -42,7 +44,8 @@ src/
 │   ├── user.rs                # User model / 用户模型
 │   ├── subscription.rs        # Subscription model / 订阅模型
 │   ├── article.rs             # Article model / 文章模型
-│   └── file.rs                # File metadata model / 文件元数据模型
+│   ├── file.rs                # File metadata model / 文件元数据模型
+│   └── announcement.rs        # Announcement model / 公告模型
 └── utils/
     ├── mod.rs                 # Utility exports / 工具导出
     ├── hash.rs                # Password hashing / 密码哈希

@@ -5,13 +5,13 @@ use super::public;
 use super::user;
 use crate::config::Config;
 use crate::error::Result;
-use crate::middleware::cors::{CorsPolicy, enforce_cors};
+use crate::middleware::cors::{enforce_cors, CorsPolicy};
 use crate::middleware::rate_limiter::global_rate_limit;
 use crate::utils::{hashid::HashIdManager, jwt::JwtManager, rate_limiter::RateLimiter};
 use axum::{
-    Extension, Router,
     extract::DefaultBodyLimit,
     routing::{get, post, put},
+    Extension, Router,
 };
 use std::sync::Arc;
 
@@ -116,6 +116,10 @@ pub fn create_router(
             "/files/{hash_id}",
             get(admin::files::get_file).delete(admin::files::delete_file),
         )
+        .route(
+            "/announcement",
+            put(admin::announcement::publish_announcement),
+        )
         .route_layer(axum::middleware::from_fn_with_state(
             jwt_manager.clone(),
             crate::middleware::auth::require_admin,
@@ -153,7 +157,12 @@ pub fn create_router(
         .route("/api/users/login", post(user::auth::user_login))
         .with_state(user_state.clone())
         .nest("/api/users", user_protected)
-        .merge(public::api::routes(config.siteinfo, pool, hashid_manager))
+        .merge(public::api::routes(
+            config.siteinfo,
+            pool.clone(),
+            hashid_manager,
+        ))
+        .merge(public::announcement::routes(pool))
         .layer(axum::middleware::from_fn(global_rate_limit))
         .layer(Extension(global_limiter));
 

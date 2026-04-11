@@ -1,2 +1,3 @@
 [2026-04-09T20:30:46+08:00] Fixed rate limiter to read client IP from X-Forwarded-For / X-Real-IP headers before falling back to TCP peer address, enabling correct behavior behind a reverse proxy.
 [2026-04-11T18:52:45+08:00] Added database version tracking via kv_store (db_version key). Created src/db/migration.rs with automatic version check and upgrade on startup. Databases without a version are assigned version 1 then upgraded to version 2. Placeholder area (migrate_v1_to_v2) provided for adding new data tables.
+[2026-04-11T19:11:24+08:00] Added announcement publish (admin PUT /api/admin/announcement) and display (public GET /api/public/announcement) endpoints. Announcement data stored as JSON in kv_store table with content and updated_at fields.
