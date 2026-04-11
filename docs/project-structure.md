@@ -9,6 +9,7 @@ src/
 ├── error.rs                   # Unified application errors / 统一应用错误
 ├── db/
 │   ├── mod.rs                 # Database initialization / 数据库初始化
+│   ├── migration.rs           # Version tracking and migrations / 版本跟踪与迁移
 │   └── schema.rs              # SQLite schema / SQLite 模式
 ├── handlers/
 │   ├── mod.rs                 # Handler exports / 处理器导出

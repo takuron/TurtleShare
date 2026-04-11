@@ -14,6 +14,8 @@
 - [x] Implement schema.sql with all tables (users, user_subscriptions, articles, files, kv_store)
 - [x] Add database migration support
 - [x] Create connection pool setup
+- [x] Add database version tracking via kv_store (db_version key)
+- [x] Implement automatic version check and upgrade on startup
 
 ### JWT Utilities / JWT 工具
 - [x] Implement JWT secret generation (SHA256 + UUID)
