@@ -16,6 +16,7 @@ mod pagination;
 mod public_articles;
 mod publish_at;
 mod rate_limiter;
+mod tier_descriptions;
 mod user_articles;
 mod user_auth;
 mod user_operations;

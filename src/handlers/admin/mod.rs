@@ -8,5 +8,6 @@ pub mod subscriptions;
 pub mod articles;
 pub mod files;
 pub mod announcement;
+pub mod tier_descriptions;
 
 pub use auth::AdminState;

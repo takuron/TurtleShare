@@ -10,7 +10,7 @@ use crate::middleware::rate_limiter::global_rate_limit;
 use crate::utils::{hashid::HashIdManager, jwt::JwtManager, rate_limiter::RateLimiter};
 use axum::{
     extract::DefaultBodyLimit,
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
     Extension, Router,
 };
 use std::sync::Arc;
@@ -54,6 +54,11 @@ pub fn create_router(
         hashid_manager: hashid_manager.clone(),
         rate_limiter: RateLimiter::new(300, 10),
         pool: pool.clone(),
+    };
+
+    let public_state = public::PublicState {
+        pool,
+        hashid_manager,
     };
 
     let max_upload_bytes = admin_state.max_upload_size_bytes as usize;
@@ -120,6 +125,14 @@ pub fn create_router(
             "/announcement",
             put(admin::announcement::publish_announcement),
         )
+        .route(
+            "/tier-descriptions",
+            put(admin::tier_descriptions::upsert_tier_description),
+        )
+        .route(
+            "/tier-descriptions/{tier}",
+            delete(admin::tier_descriptions::delete_tier_description),
+        )
         .route_layer(axum::middleware::from_fn_with_state(
             jwt_manager.clone(),
             crate::middleware::auth::require_admin,
@@ -157,12 +170,7 @@ pub fn create_router(
         .route("/api/users/login", post(user::auth::user_login))
         .with_state(user_state.clone())
         .nest("/api/users", user_protected)
-        .merge(public::api::routes(
-            config.siteinfo,
-            pool.clone(),
-            hashid_manager,
-        ))
-        .merge(public::announcement::routes(pool))
+        .merge(public::routes(config.siteinfo, public_state))
         .layer(axum::middleware::from_fn(global_rate_limit))
         .layer(Extension(global_limiter));
 

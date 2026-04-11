@@ -103,3 +103,4 @@ See `docs/api.md` for complete API documentation.
 New public endpoint:
 - `GET /api/public/site-info` - Returns site information for frontend display
 - `GET /api/public/announcement` - Returns the current site announcement (or null)
+- `GET /api/public/tier-descriptions` - Returns all tier descriptions (or null)

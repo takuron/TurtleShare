@@ -795,6 +795,97 @@ Publish or update the site announcement. The announcement is stored as a JSON st
 }
 ```
 
+**Tier Descriptions / 等级说明管理**
+
+### PUT /api/admin/tier-descriptions
+Add or update a tier description. Tier descriptions are stored as a JSON structure in the kv_store table under the key "tier_descriptions". If a description for the same tier already exists, it is overwritten. Tiers are kept sorted by tier level.
+
+添加或更新等级说明。等级说明以 JSON 结构存储在 kv_store 表中键为 "tier_descriptions" 的记录中。如果相同等级的说明已存在，则覆盖。等级按等级号排序。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Request Body / 请求体:**
+```json
+{
+  "tier": 1,
+  "name": "Basic",
+  "description": "Access to basic content",
+  "price": "¥10/月"
+}
+```
+
+**Request Fields / 请求字段:**
+- `tier` (integer, required) - Subscription tier level (must be 0-255) / 订阅等级（必须为 0-255）
+- `name` (string|null, optional) - Display name of the tier / 等级的显示名称
+- `description` (string|null, optional) - Plain-text description of the tier / 等级的纯文本说明
+- `price` (string|null, optional) - Plain-text price information / 等级的纯文本价格信息
+
+**Validation Rules / 验证规则:**
+- At least one of `name`, `description`, or `price` must be non-empty / `name`、`description`、`price` 中至少有一个必须非空
+- On update, only provided non-empty fields are overwritten; omitted fields retain their current values / 更新时仅覆盖提供的非空字段，省略的字段保留当前值
+- On create, omitted fields default to empty strings / 创建时省略的字段默认为空字符串
+
+**Success Response / 成功响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "tiers": [
+      {
+        "tier": 1,
+        "name": "Basic",
+        "description": "Access to basic content",
+        "price": "¥10/月"
+      }
+    ],
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Error Response / 错误响应:** `400 Bad Request`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "at least one of name, description, or price must not be empty"
+  }
+}
+```
+
+### DELETE /api/admin/tier-descriptions/:tier
+Delete a tier description. Removes the description for the specified tier level.
+
+删除等级说明。移除指定等级的说明。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `tier` (integer) - The tier level to delete (0-255) / 要删除的等级（0-255）
+
+**Success Response / 成功响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true,
+    "tier": 1
+  }
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Tier description not found"
+  }
+}
+```
+
 ---
 
 **Files / 文件管理**
@@ -1408,6 +1499,58 @@ Returns the current site announcement. Returns null data if no announcement has 
 **Response Fields / 响应字段:**
 - `content` (string) - Announcement content in Markdown / 公告内容（Markdown）
 - `updated_at` (integer) - Unix timestamp of the last update / 最后更新的 Unix 时间戳
+
+---
+
+### GET /api/public/tier-descriptions
+Returns all tier descriptions. If no tier descriptions exist, returns an empty tiers array with `updated_at` set to -1.
+
+返回所有等级说明。如果不存在等级说明，则返回空的 tiers 数组且 `updated_at` 为 -1。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Response / 响应 (with tier descriptions / 有等级说明时):** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "tiers": [
+      {
+        "tier": 1,
+        "name": "Basic",
+        "description": "Access to basic content",
+        "price": "¥10/月"
+      },
+      {
+        "tier": 2,
+        "name": "Premium",
+        "description": "Access to all content including premium articles",
+        "price": "¥30/月"
+      }
+    ],
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Response / 响应 (no tier descriptions / 无等级说明时):** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "tiers": [],
+    "updated_at": -1
+  }
+}
+```
+
+**Response Fields / 响应字段:**
+- `tiers` (array) - List of tier description entries, sorted by tier level. Empty array if none exist. / 等级说明条目列表，按等级排序。不存在时为空数组。
+  - `tier` (integer) - Subscription tier level / 订阅等级
+  - `name` (string) - Display name of the tier / 等级的显示名称
+  - `description` (string) - Plain-text description of the tier / 等级的纯文本说明
+  - `price` (string) - Plain-text price information / 等级的纯文本价格信息
+- `updated_at` (integer) - Unix timestamp of the last update. -1 if no tier descriptions have been created. / 最后更新的 Unix 时间戳。如果尚未创建等级说明则为 -1。
 
 ---
 

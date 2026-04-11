@@ -4,43 +4,13 @@
 
 use crate::error::AppError;
 use crate::handlers::common::ApiResponse;
+use crate::handlers::public::PublicState;
 use crate::models::announcement::AnnouncementData;
 use axum::{
     Json,
-    Router,
     extract::State,
     response::IntoResponse,
-    routing::get,
 };
-use sqlx::SqlitePool;
-
-/// State for public announcement handler.
-///
-/// Contains the database pool needed to read the announcement.
-//
-// // 公开公告处理器的状态。
-// //
-// // 包含读取公告所需的数据库连接池。
-#[derive(Clone)]
-pub struct PublicAnnouncementState {
-    pub pool: SqlitePool,
-}
-
-/// Creates the public announcement routes.
-///
-/// # Arguments
-/// * `pool` - Database connection pool
-//
-// // 创建公开公告路由。
-// //
-// // # 参数
-// // * `pool` - 数据库连接池
-pub fn routes(pool: SqlitePool) -> Router {
-    let state = PublicAnnouncementState { pool };
-    Router::new()
-        .route("/api/public/announcement", get(get_announcement))
-        .with_state(state)
-}
 
 /// Get the current site announcement.
 ///
@@ -65,7 +35,7 @@ pub fn routes(pool: SqlitePool) -> Router {
 // // 如果数据库查询失败，返回 `AppError::Database`。
 // // 如果存储的 JSON 格式错误，返回 `AppError::Internal`。
 pub async fn get_announcement(
-    State(state): State<PublicAnnouncementState>,
+    State(state): State<PublicState>,
 ) -> Result<impl IntoResponse, AppError> {
     // 1. 从 kv_store 读取公告
     let row: Option<(String,)> = sqlx::query_as(
