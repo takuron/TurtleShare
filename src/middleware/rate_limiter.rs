@@ -14,8 +14,8 @@ use std::sync::Arc;
 /// to all API endpoints.
 ///
 /// The client IP is resolved in this order:
-/// 1. First non-empty token from the `X-Forwarded-For` header (set by most reverse proxies).
-/// 2. Value of the `X-Real-IP` header (set by nginx when configured).
+/// 1. Value of the `X-Real-IP` header (set by the outermost reverse proxy, usually the real public IP).
+/// 2. First non-empty token from the `X-Forwarded-For` header (first hop may be an internal IP in multi-proxy setups).
 /// 3. TCP connection peer address as a final fallback.
 ///
 /// Uses `Extension` instead of `State` to avoid conflicts with the router's primary
@@ -36,8 +36,8 @@ use std::sync::Arc;
 // // 对所有 API 端点应用每 IP 每 1 分钟最多 100 次请求的滑动窗口限制。
 // //
 // // 客户端 IP 按以下优先级解析：
-// // 1. X-Forwarded-For 头中第一个非空令牌（大多数反向代理会设置此头）。
-// // 2. X-Real-IP 头的值（nginx 配置后会设置此头）。
+// // 1. X-Real-IP 头的值（由最外层反向代理设置，通常是真实公网 IP）。
+// // 2. X-Forwarded-For 头中第一个非空令牌（多级代理时首跳可能是内网 IP）。
 // // 3. 最终回退到 TCP 连接的对端地址。
 // //
 // // 使用 `Extension` 而不是 `State` 以避免与路由器的主要状态类型冲突，
@@ -57,18 +57,18 @@ pub async fn global_rate_limit(
     req: Request,
     next: Next,
 ) -> Result<Response, AppError> {
-    // 1. 优先读取 X-Forwarded-For 头，取第一个（最左侧）IP，即真实客户端 IP
+    // 1. 优先读取 X-Real-IP 头（由最外层反代设置，通常是真实客户端公网 IP）
     let ip = req
         .headers()
-        .get("x-forwarded-for")
+        .get("x-real-ip")
         .and_then(|v| v.to_str().ok())
-        .and_then(|s| s.split(',').next())
         .map(|s| s.trim().to_string())
-        // 2. 其次读取 X-Real-IP 头（nginx 等反代常用）
+        // 2. 其次读取 X-Forwarded-For 头，取第一个 IP（多级代理时首跳可能是内网 IP）
         .or_else(|| {
             req.headers()
-                .get("x-real-ip")
+                .get("x-forwarded-for")
                 .and_then(|v| v.to_str().ok())
+                .and_then(|s| s.split(',').next())
                 .map(|s| s.trim().to_string())
         })
         // 3. 最终回退到 TCP 连接的对端 IP（直连场景）
