@@ -757,9 +757,9 @@ Delete an article from the database.
 **Announcement / 公告管理**
 
 ### PUT /api/admin/announcement
-Publish or update the site announcement. The announcement is stored as a JSON structure in the kv_store table.
+Publish, update, or delete the site announcement. The announcement is stored as a JSON structure in the kv_store table.
 
-发布或更新站点公告。公告以 JSON 结构存储在 kv_store 表中。
+发布、更新或删除站点公告。公告以 JSON 结构存储在 kv_store 表中。
 
 **Authentication / 鉴权:** Admin JWT / 管理员 JWT
 
@@ -771,9 +771,9 @@ Publish or update the site announcement. The announcement is stored as a JSON st
 ```
 
 **Request Fields / 请求字段:**
-- `content` (string, required) - Announcement content in Markdown (must not be empty) / 公告内容（Markdown），不能为空
+- `content` (string, required) - Announcement content in Markdown. If empty or whitespace-only, the announcement is deleted. / 公告内容（Markdown）。如果为空或仅含空白字符，则删除公告。
 
-**Success Response / 成功响应:** `200 OK`
+**Success Response / 成功响应 (publish/update):** `200 OK`
 ```json
 {
   "success": true,
@@ -784,14 +784,11 @@ Publish or update the site announcement. The announcement is stored as a JSON st
 }
 ```
 
-**Error Response / 错误响应:** `400 Bad Request`
+**Success Response / 成功响应 (delete / 删除):** `200 OK`
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "content must not be empty"
-  }
+  "success": true,
+  "data": null
 }
 ```
 

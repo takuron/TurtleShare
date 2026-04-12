@@ -157,14 +157,93 @@ async fn put_announcement_overwrites_previous() {
 }
 
 // =========================================================================
-// PUT — 验证错误：空内容
+// PUT — 空内容删除公告
 // =========================================================================
 
-/// Tests that publishing an announcement with empty content returns 400 validation error.
+/// Tests that publishing an announcement with empty content deletes the existing announcement.
 //
-// // 测试发布空内容的公告返回 400 验证错误。
+// // 测试发布空内容的公告会删除已有公告。
 #[tokio::test]
-async fn put_announcement_empty_content_returns_400() {
+async fn put_announcement_empty_content_deletes_announcement() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+
+    // 1. 先发布一条公告
+    server
+        .put_json_with_token(
+            "/api/admin/announcement",
+            &json!({"content": "Existing announcement"}),
+            &token,
+        )
+        .await;
+
+    // 2. 发送空内容删除公告
+    let resp = server
+        .put_json_with_token(
+            "/api/admin/announcement",
+            &json!({"content": ""}),
+            &token,
+        )
+        .await;
+
+    // 3. 验证状态码
+    assert_eq!(resp.status(), 200);
+
+    // 4. 验证响应体 data 为 null
+    let body: Value = resp.json().await.unwrap();
+    assert_eq!(body["success"], true);
+    assert!(body["data"].is_null(), "data should be null after deletion");
+
+    // 5. 公开接口也应返回 null
+    let get_resp = server.get("/api/public/announcement").await;
+    let get_body: Value = get_resp.json().await.unwrap();
+    assert!(get_body["data"].is_null(), "public data should be null after deletion");
+}
+
+// =========================================================================
+// PUT — 仅空白字符内容也删除公告
+// =========================================================================
+
+/// Tests that publishing an announcement with whitespace-only content also deletes it.
+//
+// // 测试仅含空白字符的内容也会删除公告。
+#[tokio::test]
+async fn put_announcement_whitespace_content_deletes_announcement() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+
+    // 1. 先发布一条公告
+    server
+        .put_json_with_token(
+            "/api/admin/announcement",
+            &json!({"content": "Existing announcement"}),
+            &token,
+        )
+        .await;
+
+    // 2. 发送仅含空白的内容
+    let resp = server
+        .put_json_with_token(
+            "/api/admin/announcement",
+            &json!({"content": "   "}),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 200);
+    let body: Value = resp.json().await.unwrap();
+    assert!(body["data"].is_null(), "data should be null after deletion");
+}
+
+// =========================================================================
+// PUT — 无公告时发送空内容
+// =========================================================================
+
+/// Tests that sending empty content when no announcement exists returns null data.
+//
+// // 测试无公告时发送空内容返回 null 数据。
+#[tokio::test]
+async fn put_announcement_empty_content_when_none_exists() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
@@ -176,14 +255,9 @@ async fn put_announcement_empty_content_returns_400() {
         )
         .await;
 
-    // 1. 验证状态码
-    assert_eq!(resp.status(), 400);
-
-    // 2. 验证错误响应体
+    assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
-    assert_eq!(body["success"], false);
-    assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
-    assert_eq!(body["error"]["message"], "content must not be empty");
+    assert!(body["data"].is_null());
 }
 
 // =========================================================================

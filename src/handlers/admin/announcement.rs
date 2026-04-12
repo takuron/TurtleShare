@@ -19,15 +19,17 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// under the key "announcement". If an announcement already exists, it is
 /// overwritten. The `updated_at` timestamp is set automatically.
 ///
+/// If the content is empty or whitespace-only, the announcement is deleted
+/// from the kv_store and null data is returned.
+///
 /// # Arguments
 /// * `state` - Shared admin state containing the database pool.
 /// * `req` - The publish request containing the announcement content.
 ///
 /// # Returns
-/// Returns the stored announcement data on success.
+/// Returns the stored announcement data on success, or null data if deleted.
 ///
 /// # Errors
-/// Returns `AppError::ValidationError` if the content is empty or whitespace-only.
 /// Returns `AppError::Database` if the database operation fails.
 //
 // // 发布或更新站点公告。
@@ -35,25 +37,32 @@ use std::time::{SystemTime, UNIX_EPOCH};
 // // 将公告内容以 JSON 字符串的形式存储在 kv_store 表中键为 "announcement" 的记录中。
 // // 如果公告已存在，则覆盖。`updated_at` 时间戳自动设置。
 // //
+// // 如果内容为空或仅包含空白字符，则从 kv_store 中删除公告，并返回 null 数据。
+// //
 // // # 参数
 // // * `state` - 包含数据库连接池的共享管理员状态。
 // // * `req` - 包含公告内容的发布请求。
 // //
 // // # 返回
-// // 成功时返回存储的公告数据。
+// // 成功时返回存储的公告数据，删除时返回 null 数据。
 // //
 // // # 错误
-// // 如果内容为空或仅包含空白字符，返回 `AppError::ValidationError`。
 // // 如果数据库操作失败，返回 `AppError::Database`。
 pub async fn publish_announcement(
     State(state): State<AdminState>,
     Json(req): Json<PublishAnnouncementRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // 1. 验证内容非空
+    // 1. 检查内容是否为空，若为空则删除公告
     if req.content.trim().is_empty() {
-        return Err(AppError::ValidationError(
-            "content must not be empty".to_string(),
-        ));
+        sqlx::query("DELETE FROM kv_store WHERE key = 'announcement'")
+            .execute(&state.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        return Ok(Json(ApiResponse {
+            success: true,
+            data: serde_json::Value::Null,
+        }));
     }
 
     let now = SystemTime::now()
@@ -86,8 +95,11 @@ pub async fn publish_announcement(
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
 
+    let data = serde_json::to_value(&announcement)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize announcement: {}", e)))?;
+
     Ok(Json(ApiResponse {
         success: true,
-        data: announcement,
+        data,
     }))
 }

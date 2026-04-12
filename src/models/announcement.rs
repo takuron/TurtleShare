@@ -31,8 +31,8 @@ pub struct AnnouncementData {
 // // 发布公告的请求体。
 #[derive(Debug, Deserialize)]
 pub struct PublishAnnouncementRequest {
-    /// The announcement content (Markdown). Must not be empty.
+    /// The announcement content (Markdown). Empty or whitespace-only content deletes the announcement.
     //
-    // // 公告内容（Markdown）。不能为空。
+    // // 公告内容（Markdown）。内容为空或仅含空白字符时删除公告。
     pub content: String,
 }
