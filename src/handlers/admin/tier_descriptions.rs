@@ -28,7 +28,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// Returns the full tier descriptions data on success.
 ///
 /// # Errors
-/// Returns `AppError::ValidationError` if all three text fields (name, description, price) are empty or missing.
+/// Returns `AppError::ValidationError` if all four text fields (name, description, price, purchase_url) are empty or missing.
 /// Returns `AppError::Database` if the database operation fails.
 //
 // // 添加或更新等级说明。
@@ -44,7 +44,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 // // 成功时返回完整的等级说明数据。
 // //
 // // # 错误
-// // 如果三个文本字段（名称、说明、价格）均为空或缺失，返回 `AppError::ValidationError`。
+// // 如果四个文本字段（名称、说明、价格、购买链接）均为空或缺失，返回 `AppError::ValidationError`。
 // // 如果数据库操作失败，返回 `AppError::Database`。
 pub async fn upsert_tier_description(
     State(state): State<AdminState>,
@@ -54,11 +54,12 @@ pub async fn upsert_tier_description(
     let name = req.name.filter(|s| !s.trim().is_empty());
     let description = req.description.filter(|s| !s.trim().is_empty());
     let price = req.price.filter(|s| !s.trim().is_empty());
+    let purchase_url = req.purchase_url.filter(|s| !s.trim().is_empty());
 
     // 2. 验证至少有一个文本字段非空
-    if name.is_none() && description.is_none() && price.is_none() {
+    if name.is_none() && description.is_none() && price.is_none() && purchase_url.is_none() {
         return Err(AppError::ValidationError(
-            "at least one of name, description, or price must not be empty".to_string(),
+            "at least one of name, description, price, or purchase_url must not be empty".to_string(),
         ));
     }
 
@@ -86,6 +87,7 @@ pub async fn upsert_tier_description(
             name: name.unwrap_or_else(|| old.name.clone()),
             description: description.unwrap_or_else(|| old.description.clone()),
             price: price.unwrap_or_else(|| old.price.clone()),
+            purchase_url: purchase_url.unwrap_or_else(|| old.purchase_url.clone()),
         }
     } else {
         // 新建模式：未提供的字段默认为空字符串
@@ -94,6 +96,7 @@ pub async fn upsert_tier_description(
             name: name.unwrap_or_default(),
             description: description.unwrap_or_default(),
             price: price.unwrap_or_default(),
+            purchase_url: purchase_url.unwrap_or_default(),
         }
     };
 

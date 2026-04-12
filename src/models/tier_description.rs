@@ -34,6 +34,11 @@ pub struct TierDescription {
     //
     // // 等级的纯文本价格信息。
     pub price: String,
+
+    /// The purchase link URL for the tier.
+    //
+    // // 等级的购买链接 URL。
+    pub purchase_url: String,
 }
 
 /// All tier descriptions stored in kv_store under the key "tier_descriptions".
@@ -60,13 +65,13 @@ pub struct TierDescriptionsData {
 
 /// Request body for upserting a tier description.
 ///
-/// The `name`, `description`, and `price` fields are all optional individually,
+/// The `name`, `description`, `price`, and `purchase_url` fields are all optional individually,
 /// but at least one of them must be non-empty when making a request.
 /// On update, only provided non-empty fields are overwritten.
 //
 // // 添加或更新等级说明的请求体。
 // //
-// // `name`、`description` 和 `price` 字段均可单独省略，
+// // `name`、`description`、`price` 和 `purchase_url` 字段均可单独省略，
 // // 但请求中至少有一个字段必须非空。
 // // 更新时，仅覆盖提供的非空字段。
 #[derive(Debug, Deserialize)]
@@ -90,4 +95,9 @@ pub struct UpsertTierDescriptionRequest {
     //
     // // 等级的纯文本价格信息。更新时可选。
     pub price: Option<String>,
+
+    /// The purchase link URL for the tier. Optional on update.
+    //
+    // // 等级的购买链接 URL。更新时可选。
+    pub purchase_url: Option<String>,
 }

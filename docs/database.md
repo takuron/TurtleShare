@@ -93,4 +93,4 @@ CREATE TABLE kv_store (
 | `jwt_secret_previous` | Previous JWT signing secret (base64, nullable) / 上一个 JWT 签名密钥 |
 | `jwt_secret_date` | Current secret creation time (Unix timestamp as string) / 当前密钥创建时间 |
 | `announcement` | Site announcement JSON: `{"content":"...","updated_at":1710928800}` / 站点公告 JSON |
-| `tier_descriptions` | Tier descriptions JSON: `{"tiers":[{"tier":1,"name":"Basic","description":"...","price":"¥10/月"}],"updated_at":1710928800}` / 等级说明 JSON |
+| `tier_descriptions` | Tier descriptions JSON: `{"tiers":[{"tier":1,"name":"Basic","description":"...","price":"¥10/月","purchase_url":"https://..."}],"updated_at":1710928800}` / 等级说明 JSON |

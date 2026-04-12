@@ -810,7 +810,8 @@ Add or update a tier description. Tier descriptions are stored as a JSON structu
   "tier": 1,
   "name": "Basic",
   "description": "Access to basic content",
-  "price": "¥10/月"
+  "price": "¥10/月",
+  "purchase_url": "https://example.com/buy/basic"
 }
 ```
 
@@ -819,9 +820,10 @@ Add or update a tier description. Tier descriptions are stored as a JSON structu
 - `name` (string|null, optional) - Display name of the tier / 等级的显示名称
 - `description` (string|null, optional) - Plain-text description of the tier / 等级的纯文本说明
 - `price` (string|null, optional) - Plain-text price information / 等级的纯文本价格信息
+- `purchase_url` (string|null, optional) - Purchase link URL for the tier / 等级的购买链接 URL
 
 **Validation Rules / 验证规则:**
-- At least one of `name`, `description`, or `price` must be non-empty / `name`、`description`、`price` 中至少有一个必须非空
+- At least one of `name`, `description`, `price`, or `purchase_url` must be non-empty / `name`、`description`、`price`、`purchase_url` 中至少有一个必须非空
 - On update, only provided non-empty fields are overwritten; omitted fields retain their current values / 更新时仅覆盖提供的非空字段，省略的字段保留当前值
 - On create, omitted fields default to empty strings / 创建时省略的字段默认为空字符串
 
@@ -835,7 +837,8 @@ Add or update a tier description. Tier descriptions are stored as a JSON structu
         "tier": 1,
         "name": "Basic",
         "description": "Access to basic content",
-        "price": "¥10/月"
+        "price": "¥10/月",
+        "purchase_url": "https://example.com/buy/basic"
       }
     ],
     "updated_at": 1710928800
@@ -849,7 +852,7 @@ Add or update a tier description. Tier descriptions are stored as a JSON structu
   "success": false,
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "at least one of name, description, or price must not be empty"
+    "message": "at least one of name, description, price, or purchase_url must not be empty"
   }
 }
 ```
@@ -1519,13 +1522,15 @@ Returns all tier descriptions. If no tier descriptions exist, returns an empty t
         "tier": 1,
         "name": "Basic",
         "description": "Access to basic content",
-        "price": "¥10/月"
+        "price": "¥10/月",
+        "purchase_url": "https://example.com/buy/basic"
       },
       {
         "tier": 2,
         "name": "Premium",
         "description": "Access to all content including premium articles",
-        "price": "¥30/月"
+        "price": "¥30/月",
+        "purchase_url": "https://example.com/buy/premium"
       }
     ],
     "updated_at": 1710928800
@@ -1550,6 +1555,7 @@ Returns all tier descriptions. If no tier descriptions exist, returns an empty t
   - `name` (string) - Display name of the tier / 等级的显示名称
   - `description` (string) - Plain-text description of the tier / 等级的纯文本说明
   - `price` (string) - Plain-text price information / 等级的纯文本价格信息
+  - `purchase_url` (string) - Purchase link URL for the tier / 等级的购买链接 URL
 - `updated_at` (integer) - Unix timestamp of the last update. -1 if no tier descriptions have been created. / 最后更新的 Unix 时间戳。如果尚未创建等级说明则为 -1。
 
 ---

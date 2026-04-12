@@ -119,3 +119,4 @@
 - [x] Add health check endpoint
 - [x] Add announcement publish (admin) and display (public) endpoints
 - [x] Add tier description management (admin PUT/DELETE) and display (public GET) endpoints
+- [x] Add purchase_url field to tier descriptions

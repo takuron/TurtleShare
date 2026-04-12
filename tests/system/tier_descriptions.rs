@@ -124,6 +124,7 @@ async fn put_tier_description_success() {
     assert_eq!(tiers[0]["name"], "Basic");
     assert_eq!(tiers[0]["description"], "Access to basic content");
     assert_eq!(tiers[0]["price"], "¥10/月");
+    assert_eq!(tiers[0]["purchase_url"], "");
 
     // 4. updated_at 应为正整数（Unix 时间戳）
     let updated_at = body["data"]["updated_at"]
@@ -175,6 +176,7 @@ async fn public_tier_descriptions_returns_created_content() {
     assert_eq!(tiers[0]["name"], "Basic");
     assert_eq!(tiers[0]["description"], "Access to basic content");
     assert_eq!(tiers[0]["price"], "¥10/月");
+    assert_eq!(tiers[0]["purchase_url"], "");
 
     // 3. updated_at 应为正整数
     let updated_at = body["data"]["updated_at"]
@@ -221,6 +223,7 @@ async fn put_tier_description_overwrites_existing() {
     assert_eq!(tiers[0]["name"], "Basic Plus");
     assert_eq!(tiers[0]["description"], "New desc");
     assert_eq!(tiers[0]["price"], "¥15/月");
+    assert_eq!(tiers[0]["purchase_url"], "");
 }
 
 // =========================================================================
@@ -301,7 +304,7 @@ async fn put_tier_description_all_empty_fields_returns_400() {
     assert_eq!(body["error"]["code"], "VALIDATION_ERROR");
     assert_eq!(
         body["error"]["message"],
-        "at least one of name, description, or price must not be empty"
+        "at least one of name, description, price, or purchase_url must not be empty"
     );
 }
 
@@ -404,6 +407,7 @@ async fn put_tier_description_update_preserves_omitted_fields() {
     assert_eq!(tiers[0]["name"], "Basic Renewed");
     assert_eq!(tiers[0]["description"], "Original desc");
     assert_eq!(tiers[0]["price"], "¥10/月");
+    assert_eq!(tiers[0]["purchase_url"], "");
 }
 
 // =========================================================================
@@ -642,4 +646,108 @@ async fn put_tier_description_updated_at_changes_on_update() {
         ts2,
         ts1
     );
+}
+
+// =========================================================================
+// PUT — purchase_url 字段支持
+// =========================================================================
+
+/// Tests that purchase_url can be set and is returned correctly.
+//
+// // 测试 purchase_url 字段可以设置并正确返回。
+#[tokio::test]
+async fn put_tier_description_with_purchase_url() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+
+    let resp = server
+        .put_json_with_token(
+            "/api/admin/tier-descriptions",
+            &json!({
+                "tier": 1,
+                "name": "Basic",
+                "description": "Access to basic content",
+                "price": "¥10/月",
+                "purchase_url": "https://example.com/buy/basic"
+            }),
+            &token,
+        )
+        .await;
+    assert_eq!(resp.status(), 200);
+
+    let body: Value = resp.json().await.unwrap();
+    let tiers = body["data"]["tiers"].as_array().unwrap();
+    assert_eq!(tiers[0]["purchase_url"], "https://example.com/buy/basic");
+}
+
+// =========================================================================
+// PUT — 更新时保留 purchase_url
+// =========================================================================
+
+/// Tests that purchase_url is preserved when updating other fields.
+//
+// // 测试更新其他字段时 purchase_url 被保留。
+#[tokio::test]
+async fn put_tier_description_preserves_purchase_url() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+
+    // 1. 创建带 purchase_url 的等级说明
+    server
+        .put_json_with_token(
+            "/api/admin/tier-descriptions",
+            &json!({
+                "tier": 1,
+                "name": "Basic",
+                "description": "Access to basic content",
+                "price": "¥10/月",
+                "purchase_url": "https://example.com/buy/basic"
+            }),
+            &token,
+        )
+        .await;
+
+    // 2. 仅更新 name，purchase_url 应保留
+    let resp = server
+        .put_json_with_token(
+            "/api/admin/tier-descriptions",
+            &json!({"tier": 1, "name": "Basic Renewed"}),
+            &token,
+        )
+        .await;
+    assert_eq!(resp.status(), 200);
+
+    let body: Value = resp.json().await.unwrap();
+    let tiers = body["data"]["tiers"].as_array().unwrap();
+    assert_eq!(tiers[0]["name"], "Basic Renewed");
+    assert_eq!(tiers[0]["purchase_url"], "https://example.com/buy/basic");
+}
+
+// =========================================================================
+// PUT — 仅 purchase_url 非空可创建
+// =========================================================================
+
+/// Tests that a tier description can be created with only purchase_url.
+//
+// // 测试仅提供 purchase_url 即可创建等级说明。
+#[tokio::test]
+async fn put_tier_description_with_only_purchase_url() {
+    let server = common::TestServer::spawn().await;
+    let token = server.admin_login().await;
+
+    let resp = server
+        .put_json_with_token(
+            "/api/admin/tier-descriptions",
+            &json!({"tier": 2, "purchase_url": "https://example.com/buy/premium"}),
+            &token,
+        )
+        .await;
+
+    assert_eq!(resp.status(), 200);
+
+    let body: Value = resp.json().await.unwrap();
+    let tiers = body["data"]["tiers"].as_array().unwrap();
+    assert_eq!(tiers[0]["tier"], 2);
+    assert_eq!(tiers[0]["purchase_url"], "https://example.com/buy/premium");
+    assert_eq!(tiers[0]["name"], "");
 }
