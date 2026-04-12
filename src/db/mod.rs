@@ -1,3 +1,4 @@
+pub mod migration;
 pub mod schema;
 
 use crate::error::{AppError, Result};
@@ -66,11 +67,14 @@ pub async fn init_db(db_path: &str, require_existing: bool) -> Result<SqlitePool
         .await
         .map_err(|e| AppError::Database(format!("Failed to connect to database: {}", e)))?;
 
-    // 5. 执行初始化迁移。
+    // 5. 执行初始化迁移（创建基础表）。
     sqlx::query(schema::SCHEMA)
         .execute(&pool)
         .await
         .map_err(|e| AppError::Database(format!("Failed to execute schema migrations: {}", e)))?;
+
+    // 6. 检查数据库版本并执行版本升级。
+    migration::check_and_upgrade(&pool).await?;
 
     Ok(pool)
 }

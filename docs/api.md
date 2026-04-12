@@ -754,6 +754,140 @@ Delete an article from the database.
 }
 ```
 
+**Announcement / 公告管理**
+
+### PUT /api/admin/announcement
+Publish, update, or delete the site announcement. The announcement is stored as a JSON structure in the kv_store table.
+
+发布、更新或删除站点公告。公告以 JSON 结构存储在 kv_store 表中。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Request Body / 请求体:**
+```json
+{
+  "content": "Site maintenance scheduled for Saturday."
+}
+```
+
+**Request Fields / 请求字段:**
+- `content` (string, required) - Announcement content in Markdown. If empty or whitespace-only, the announcement is deleted. / 公告内容（Markdown）。如果为空或仅含空白字符，则删除公告。
+
+**Success Response / 成功响应 (publish/update):** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "content": "Site maintenance scheduled for Saturday.",
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Success Response / 成功响应 (delete / 删除):** `200 OK`
+```json
+{
+  "success": true,
+  "data": null
+}
+```
+
+**Tier Descriptions / 等级说明管理**
+
+### PUT /api/admin/tier-descriptions
+Add or update a tier description. Tier descriptions are stored as a JSON structure in the kv_store table under the key "tier_descriptions". If a description for the same tier already exists, it is overwritten. Tiers are kept sorted by tier level.
+
+添加或更新等级说明。等级说明以 JSON 结构存储在 kv_store 表中键为 "tier_descriptions" 的记录中。如果相同等级的说明已存在，则覆盖。等级按等级号排序。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Request Body / 请求体:**
+```json
+{
+  "tier": 1,
+  "name": "Basic",
+  "description": "Access to basic content",
+  "price": "¥10/月",
+  "purchase_url": "https://example.com/buy/basic"
+}
+```
+
+**Request Fields / 请求字段:**
+- `tier` (integer, required) - Subscription tier level (must be 0-255) / 订阅等级（必须为 0-255）
+- `name` (string|null, optional) - Display name of the tier / 等级的显示名称
+- `description` (string|null, optional) - Plain-text description of the tier / 等级的纯文本说明
+- `price` (string|null, optional) - Plain-text price information / 等级的纯文本价格信息
+- `purchase_url` (string|null, optional) - Purchase link URL for the tier / 等级的购买链接 URL
+
+**Validation Rules / 验证规则:**
+- At least one of `name`, `description`, `price`, or `purchase_url` must be non-empty / `name`、`description`、`price`、`purchase_url` 中至少有一个必须非空
+- On update, only provided non-empty fields are overwritten; omitted fields retain their current values / 更新时仅覆盖提供的非空字段，省略的字段保留当前值
+- On create, omitted fields default to empty strings / 创建时省略的字段默认为空字符串
+
+**Success Response / 成功响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "tiers": [
+      {
+        "tier": 1,
+        "name": "Basic",
+        "description": "Access to basic content",
+        "price": "¥10/月",
+        "purchase_url": "https://example.com/buy/basic"
+      }
+    ],
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Error Response / 错误响应:** `400 Bad Request`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "at least one of name, description, price, or purchase_url must not be empty"
+  }
+}
+```
+
+### DELETE /api/admin/tier-descriptions/:tier
+Delete a tier description. Removes the description for the specified tier level.
+
+删除等级说明。移除指定等级的说明。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `tier` (integer) - The tier level to delete (0-255) / 要删除的等级（0-255）
+
+**Success Response / 成功响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true,
+    "tier": 1
+  }
+}
+```
+
+**Error Response / 错误响应:** `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Tier description not found"
+  }
+}
+```
+
+---
+
 **Files / 文件管理**
 
 **Note / 注意:** All file IDs in API requests and responses use hash IDs (encoded strings) for security. Numeric IDs are never exposed. / 所有 API 请求和响应中的文件 ID 都使用哈希 ID（编码字符串）以保护安全。数字 ID 永远不会暴露。
@@ -1333,6 +1467,93 @@ The response shape is fully controlled by the configuration file — any keys ad
 The `data` object mirrors `[siteinfo]` in `config.toml` exactly. All TOML scalar types (string, integer, float, boolean), arrays, and inline tables are supported.
 
 `data` 对象与 `config.toml` 中的 `[siteinfo]` 完全对应。支持所有 TOML 标量类型（字符串、整数、浮点数、布尔值）、数组和内联表。
+
+---
+
+### GET /api/public/announcement
+Returns the current site announcement. Returns null data if no announcement has been published.
+
+返回当前站点公告。如果尚未发布公告，则返回 null 数据。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Response / 响应 (with announcement / 有公告时):** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "content": "Site maintenance scheduled for Saturday.",
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Response / 响应 (no announcement / 无公告时):** `200 OK`
+```json
+{
+  "success": true,
+  "data": null
+}
+```
+
+**Response Fields / 响应字段:**
+- `content` (string) - Announcement content in Markdown / 公告内容（Markdown）
+- `updated_at` (integer) - Unix timestamp of the last update / 最后更新的 Unix 时间戳
+
+---
+
+### GET /api/public/tier-descriptions
+Returns all tier descriptions. If no tier descriptions exist, returns an empty tiers array with `updated_at` set to -1.
+
+返回所有等级说明。如果不存在等级说明，则返回空的 tiers 数组且 `updated_at` 为 -1。
+
+**Authentication / 鉴权:** None required / 无需鉴权
+
+**Response / 响应 (with tier descriptions / 有等级说明时):** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "tiers": [
+      {
+        "tier": 1,
+        "name": "Basic",
+        "description": "Access to basic content",
+        "price": "¥10/月",
+        "purchase_url": "https://example.com/buy/basic"
+      },
+      {
+        "tier": 2,
+        "name": "Premium",
+        "description": "Access to all content including premium articles",
+        "price": "¥30/月",
+        "purchase_url": "https://example.com/buy/premium"
+      }
+    ],
+    "updated_at": 1710928800
+  }
+}
+```
+
+**Response / 响应 (no tier descriptions / 无等级说明时):** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "tiers": [],
+    "updated_at": -1
+  }
+}
+```
+
+**Response Fields / 响应字段:**
+- `tiers` (array) - List of tier description entries, sorted by tier level. Empty array if none exist. / 等级说明条目列表，按等级排序。不存在时为空数组。
+  - `tier` (integer) - Subscription tier level / 订阅等级
+  - `name` (string) - Display name of the tier / 等级的显示名称
+  - `description` (string) - Plain-text description of the tier / 等级的纯文本说明
+  - `price` (string) - Plain-text price information / 等级的纯文本价格信息
+  - `purchase_url` (string) - Purchase link URL for the tier / 等级的购买链接 URL
+- `updated_at` (integer) - Unix timestamp of the last update. -1 if no tier descriptions have been created. / 最后更新的 Unix 时间戳。如果尚未创建等级说明则为 -1。
 
 ---
 

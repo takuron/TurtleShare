@@ -13,21 +13,7 @@ use crate::error::AppError;
 use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery};
 use crate::models::article::Article;
 use crate::utils::hashid::HashIdManager;
-use sqlx::SqlitePool;
-use std::sync::Arc;
-
-/// State for public article handlers.
-///
-/// Contains shared resources needed for public article operations.
-//
-// // 公开文章处理器的状态。
-// //
-// // 包含公开文章操作所需的共享资源。
-#[derive(Clone)]
-pub struct PublicArticleState {
-    pub pool: SqlitePool,
-    pub hashid_manager: Arc<HashIdManager>,
-}
+use crate::handlers::public::PublicState;
 
 /// Article list item for public article list.
 ///
@@ -128,7 +114,7 @@ impl Article {
 // // # 错误
 // // 数据库失败时返回 `Database` 错误。
 pub async fn list_articles(
-    State(state): State<PublicArticleState>,
+    State(state): State<PublicState>,
 ) -> Result<impl IntoResponse, AppError> {
     // 1. 查询所有公开文章（is_public = true）
     let articles = sqlx::query_as::<_, Article>(
@@ -189,7 +175,7 @@ pub async fn list_articles(
 // // 如果文章需要订阅（required_tier > 0），返回 `Forbidden`。
 // // 数据库失败时返回 `Database` 错误。
 pub async fn get_article(
-    State(state): State<PublicArticleState>,
+    State(state): State<PublicState>,
     Path(hash_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     // 1. 解码文章 hash_id 为数字 ID
@@ -234,7 +220,7 @@ pub async fn get_article(
 // //
 // // 基于 page_size 返回总页数和总项目数。
 pub async fn get_articles_page_count(
-    State(state): State<PublicArticleState>,
+    State(state): State<PublicState>,
     Query(query): Query<PaginationQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let page_size = query.page_size.unwrap_or(20).max(1);
@@ -264,7 +250,7 @@ pub async fn get_articles_page_count(
 // //
 // // 基于 page 和 page_size 返回特定页的公开文章。
 pub async fn list_articles_paginated(
-    State(state): State<PublicArticleState>,
+    State(state): State<PublicState>,
     Path(page): Path<u32>,
     Query(query): Query<PaginationQuery>,
 ) -> Result<impl IntoResponse, AppError> {

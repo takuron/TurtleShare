@@ -1,0 +1,1 @@
+import{g as s}from"./tC9hlJXQ.js";const t=()=>"Confirm Password",c=()=>"确认密码",l=((o={},r={})=>(r.locale??s())==="en"?t():c()),e=()=>"Passwords do not match.",a=()=>"两次输入的密码不一致。",m=((o={},r={})=>(r.locale??s())==="en"?e():a());export{l as c,m as e};

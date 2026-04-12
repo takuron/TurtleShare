@@ -1,0 +1,1 @@
+import{g as n}from"./tC9hlJXQ.js";const c=()=>"Level",r=()=>"等级",u=((o={},e={})=>(e.locale??n())==="en"?c():r()),l=()=>"Are you sure you want to delete this subscription? This action cannot be undone.",s=()=>"您确定要删除此订阅吗？此操作无法撤销。",_=((o={},e={})=>(e.locale??n())==="en"?l():s());export{u as a,_ as c};
