@@ -6,6 +6,7 @@ pub mod api;
 pub mod articles;
 pub mod announcement;
 pub mod tier_descriptions;
+pub mod search;
 
 use crate::config::SiteInfoConfig;
 use crate::utils::hashid::HashIdManager;
@@ -74,6 +75,7 @@ pub fn routes(siteinfo: SiteInfoConfig, state: PublicState) -> Router {
             get(articles::list_articles_paginated),
         )
         .route("/api/public/articles/{hash_id}", get(articles::get_article))
+        .route("/api/public/search", get(search::search))
         .with_state(state)
 }
 
