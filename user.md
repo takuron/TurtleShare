@@ -262,6 +262,254 @@ cors_origins = ["http://localhost:5173/"]  # 允许的 CORS 来源
 path = "./tts_data/database.db"  # SQLite 数据库文件路径
 ```
 
+##### 3.1 数据库结构详解
+
+TurtleShare 使用 **SQLite** 作为嵌入式数据库，所有数据存储在单个文件中。以下是完整的数据库表结构：
+
+> **注意**：所有时间戳字段使用 **Unix 时间戳**（INTEGER 类型，自 1970-01-01 以来的秒数）。
+
+###### 表概览
+
+| 表名 | 用途 |
+|-----|------|
+| `users` | 用户信息表 |
+| `user_subscriptions` | 用户订阅记录表 |
+| `articles` | 文章表 |
+| `files` | 文件记录表 |
+| `kv_store` | 键值存储表（配置、公告等） |
+
+---
+
+###### 1. `users` 表（用户信息表）
+
+存储系统中的用户账号信息。
+
+```sql
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,    -- 用户 ID
+    username TEXT UNIQUE NOT NULL,            -- 用户名（唯一）
+    password_hash TEXT NOT NULL,              -- 密码的 Argon2id 哈希
+    email TEXT,                                -- 邮箱（可选）
+    note TEXT,                                 -- 管理员备注（可选）
+    created_at INTEGER NOT NULL                -- 创建时间（Unix 时间戳）
+);
+```
+
+**字段说明**：
+
+| 字段 | 类型 | 说明 |
+|-----|------|------|
+| `id` | INTEGER | 主键，自增 |
+| `username` | TEXT | 用户名，唯一，用于登录 |
+| `password_hash` | TEXT | 密码的 Argon2id 哈希值，不存储明文密码 |
+| `email` | TEXT | 用户邮箱，可选 |
+| `note` | TEXT | 管理员对该用户的备注，仅管理员可见 |
+| `created_at` | INTEGER | 用户创建时间，Unix 时间戳 |
+
+---
+
+###### 2. `user_subscriptions` 表（用户订阅记录表）
+
+存储用户的订阅历史，支持按时间区间和等级管理订阅。
+
+```sql
+CREATE TABLE user_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,                  -- 关联的用户 ID
+    tier INTEGER NOT NULL,                     -- 订阅等级（数字越大等级越高）
+    start_date INTEGER NOT NULL,               -- 订阅开始时间
+    end_date INTEGER NOT NULL,                 -- 订阅结束时间
+    note TEXT,                                  -- 备注
+    created_at INTEGER NOT NULL,               -- 记录创建时间
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+**字段说明**：
+
+| 字段 | 类型 | 说明 |
+|-----|------|------|
+| `id` | INTEGER | 主键，自增 |
+| `user_id` | INTEGER | 外键，关联 `users.id`，用户删除时级联删除 |
+| `tier` | INTEGER | 订阅等级，0 表示无订阅，数字越大权限越高 |
+| `start_date` | INTEGER | 订阅开始时间，Unix 时间戳 |
+| `end_date` | INTEGER | 订阅结束时间，Unix 时间戳 |
+| `note` | TEXT | 管理员备注 |
+| `created_at` | INTEGER | 该订阅记录的创建时间 |
+
+**订阅等级说明**：
+- `tier = 0`：无订阅，只能访问公开内容
+- `tier = 1, 2, 3...`：不同等级的订阅，数字越大等级越高
+- 订阅按时间区间生效：`当前时间 >= start_date AND 当前时间 <= end_date`
+
+---
+
+###### 3. `articles` 表（文章表）
+
+存储发布的文章内容，支持订阅等级访问控制。
+
+```sql
+CREATE TABLE articles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,                       -- 文章标题
+    cover_image TEXT,                           -- 封面图片 URL（可选）
+    content TEXT NOT NULL,                      -- 文章内容（Markdown 格式）
+    required_tier INTEGER NOT NULL DEFAULT 0,  -- 所需订阅等级
+    is_public INTEGER NOT NULL DEFAULT 0,      -- 是否公开（1=公开，0=私有）
+    file_links TEXT,                            -- 关联文件（JSON 格式）
+    publish_at INTEGER NOT NULL,                -- 发布时间
+    created_at INTEGER NOT NULL,                -- 创建时间
+    updated_at INTEGER NOT NULL                 -- 最后更新时间
+);
+```
+
+**字段说明**：
+
+| 字段 | 类型 | 说明 |
+|-----|------|------|
+| `id` | INTEGER | 主键，自增 |
+| `title` | TEXT | 文章标题 |
+| `cover_image` | TEXT | 封面图片路径或 URL，可选 |
+| `content` | TEXT | 文章正文，Markdown 格式 |
+| `required_tier` | INTEGER | 访问此文章所需的最低订阅等级，默认 0 |
+| `is_public` | INTEGER | 是否公开：1=公开，0=私有。私有文章仅订阅用户可见 |
+| `file_links` | TEXT | 关联的文件列表，JSON 格式，如 `["uuid1", "uuid2"]` |
+| `publish_at` | INTEGER | 文章的发布时间，可用于定时发布 |
+| `created_at` | INTEGER | 文章创建时间 |
+| `updated_at` | INTEGER | 文章最后修改时间 |
+
+**访问控制逻辑**：
+1. **公开文章** (`is_public = 1`)：
+   - 所有人可见标题和封面
+   - 内容访问：如果 `required_tier > 0`，需要对应等级的订阅才能查看完整内容
+2. **私有文章** (`is_public = 0`)：
+   - 仅具有 `required_tier` 及以上订阅等级的用户可见
+3. **定时发布**：只有当 `当前时间 >= publish_at` 时文章才可见
+
+---
+
+###### 4. `files` 表（文件记录表）
+
+记录上传的文件元数据，实际文件存储在文件系统中。
+
+```sql
+CREATE TABLE files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,                 -- 文件唯一标识（UUID）
+    original_name TEXT NOT NULL,                -- 原始文件名
+    file_size INTEGER NOT NULL,                 -- 文件大小（字节）
+    created_at INTEGER NOT NULL                 -- 上传时间
+);
+```
+
+**字段说明**：
+
+| 字段 | 类型 | 说明 |
+|-----|------|------|
+| `id` | INTEGER | 主键，自增 |
+| `uuid` | TEXT | 唯一 UUID，用于生成访问 URL，防止直接猜测 |
+| `original_name` | TEXT | 用户上传时的原始文件名 |
+| `file_size` | INTEGER | 文件大小，单位字节 |
+| `created_at` | INTEGER | 上传时间 |
+
+**文件存储机制**：
+- 文件实际存储在 `config.toml` 中 `storage.files_path` 指定的目录
+- 每个文件使用 UUID 作为路径的一部分，格式为：`{files_path}/{uuid}/{original_name}`
+- 访问 URL：`/files/{uuid}/{original_name}`
+- UUID 机制提供了隐私保护，无法通过简单递增 ID 猜测其他文件
+
+---
+
+###### 5. `kv_store` 表（键值存储表）
+
+通用键值存储，用于存储配置、公告、订阅等级描述等动态数据。
+
+```sql
+CREATE TABLE kv_store (
+    key TEXT PRIMARY KEY,                       -- 键名
+    value TEXT NOT NULL,                        -- 值（通常为 JSON 格式）
+    created_at INTEGER NOT NULL,                -- 创建时间
+    updated_at INTEGER NOT NULL                 -- 最后更新时间
+);
+```
+
+**常用键值说明**：
+
+| Key | Value 格式 | 说明 |
+|-----|-----------|------|
+| `db_version` | 数字字符串 | 数据库架构版本号，用于自动迁移 |
+| `jwt_secret_current` | Base64 字符串 | 当前 JWT 签名密钥 |
+| `jwt_secret_previous` | Base64 字符串或 null | 上一个 JWT 签名密钥（用于密钥轮换） |
+| `jwt_secret_date` | 数字字符串 | 当前密钥创建时间（Unix 时间戳） |
+| `announcement` | JSON | 站点公告 |
+| `tier_descriptions` | JSON | 订阅等级描述和定价 |
+
+**公告 JSON 格式示例**：
+```json
+{
+  "content": "欢迎来到 TurtleShare！",
+  "updated_at": 1710928800
+}
+```
+
+**订阅等级描述 JSON 格式示例**：
+```json
+{
+  "tiers": [
+    {
+      "tier": 1,
+      "name": "基础会员",
+      "description": "查看所有基础文章",
+      "price": "¥10/月",
+      "purchase_url": "https://afdian.net/..."
+    },
+    {
+      "tier": 2,
+      "name": "高级会员",
+      "description": "查看所有文章和附件",
+      "price": "¥30/月",
+      "purchase_url": "https://afdian.net/..."
+    }
+  ],
+  "updated_at": 1710928800
+}
+```
+
+---
+
+##### 3.2 数据库版本与迁移
+
+TurtleShare 支持数据库自动迁移机制：
+
+- 数据库版本通过 `kv_store` 表中的 `db_version` 键追踪
+- 首次启动时自动创建所有表
+- 版本升级时自动执行迁移脚本
+- 迁移代码位于 `src/db/migration.rs`
+
+**版本历史**：
+
+| 版本 | 说明 |
+|-----|------|
+| 1 | 原始架构，无版本跟踪 |
+| 2 | 添加 `kv_store` 表和版本跟踪机制 |
+
+---
+
+##### 3.3 数据库备份与恢复
+
+**备份**：
+1. 直接复制 `database.db` 文件即可完成备份
+2. 建议同时备份 `tts_data/` 整个目录（包含数据库和上传文件）
+
+**恢复**：
+1. 停止后端服务
+2. 将备份的 `database.db` 复制回原位置
+3. 重启服务
+
+**注意**：SQLite 在写入时会锁定数据库，建议在低峰期进行备份操作。
+
+---
+
 #### 4. 存储配置 `[storage]`
 
 ```toml
