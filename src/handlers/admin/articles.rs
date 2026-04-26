@@ -4,7 +4,7 @@
 
 use super::auth::AdminState;
 use crate::error::AppError;
-use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery};
+use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery, SearchQuery};
 use crate::models::article::{
     Article, CreateArticleRequest, UpdateArticleRequest, serialize_file_links,
 };
@@ -391,6 +391,148 @@ pub async fn list_articles_paginated(
     let articles = sqlx::query_as::<_, Article>(
         "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at FROM articles ORDER BY publish_at DESC LIMIT ? OFFSET ?"
     )
+    .bind(page_size)
+    .bind(offset)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let responses: Vec<AdminArticleListItem> = articles
+        .iter()
+        .map(|a| a.to_admin_list_item(&state.hashid_manager))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: responses,
+    }))
+}
+
+/// Search articles handler for admin.
+///
+/// Returns a list of articles matching the search query.
+/// Search is performed on title and content fields.
+///
+/// # Arguments
+/// * `state` - Application state containing database pool and HashID manager
+/// * `query` - Search query parameters including search keyword and page size
+///
+/// # Returns
+/// Returns a list of articles matching the search query.
+///
+/// # Errors
+/// Returns `Database` error on database failures.
+//
+// // 管理员搜索文章处理器。
+// //
+// // 返回匹配搜索查询的文章列表。
+// // 搜索在标题和内容字段上执行。
+// //
+// // # 参数
+// // * `state` - 包含数据库连接池和 HashID 管理器的应用状态
+// // * `query` - 搜索查询参数，包括搜索关键字和页面大小
+// //
+// // # 返回
+// // 返回匹配搜索查询的文章列表。
+// //
+// // # 错误
+// // 数据库失败时返回 `Database` 错误。
+pub async fn search_articles(
+    State(state): State<AdminState>,
+    Query(query): Query<SearchQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let search_term = query.q.unwrap_or_default();
+    let search_pattern = format!("%{}%", search_term);
+
+    let articles = sqlx::query_as::<_, Article>(
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
+         FROM articles
+         WHERE title LIKE ? OR content LIKE ?
+         ORDER BY publish_at DESC
+         LIMIT ?"
+    )
+    .bind(&search_pattern)
+    .bind(&search_pattern)
+    .bind(page_size)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let responses: Vec<AdminArticleListItem> = articles
+        .iter()
+        .map(|a| a.to_admin_list_item(&state.hashid_manager))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: responses,
+    }))
+}
+
+/// Get total pages for search results for admin.
+///
+/// Returns the total number of pages and items based on page_size for search results.
+//
+// // 获取管理员搜索结果总页数。
+// //
+// // 基于 page_size 返回搜索结果的总页数和总项目数。
+pub async fn get_search_page_count(
+    State(state): State<AdminState>,
+    Query(query): Query<SearchQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let search_term = query.q.unwrap_or_default();
+    let search_pattern = format!("%{}%", search_term);
+
+    let total_items: (i64,) = sqlx::query_as(
+        "SELECT COUNT(*) FROM articles WHERE title LIKE ? OR content LIKE ?"
+    )
+    .bind(&search_pattern)
+    .bind(&search_pattern)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let total_items = total_items.0 as u32;
+    let total_pages = (total_items + page_size - 1) / page_size;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: PageCountResponse {
+            total_pages,
+            total_items,
+        },
+    }))
+}
+
+/// Search articles paginated for admin.
+///
+/// Returns a specific page of articles matching the search query based on page and page_size.
+//
+// // 管理员分页搜索文章。
+// //
+// // 基于 page 和 page_size 返回匹配搜索查询的特定页文章。
+pub async fn search_articles_paginated(
+    State(state): State<AdminState>,
+    Path(page): Path<u32>,
+    Query(query): Query<SearchQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let page = page.max(1);
+    let offset = (page - 1) * page_size;
+    let search_term = query.q.unwrap_or_default();
+    let search_pattern = format!("%{}%", search_term);
+
+    let articles = sqlx::query_as::<_, Article>(
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
+         FROM articles
+         WHERE title LIKE ? OR content LIKE ?
+         ORDER BY publish_at DESC
+         LIMIT ? OFFSET ?"
+    )
+    .bind(&search_pattern)
+    .bind(&search_pattern)
     .bind(page_size)
     .bind(offset)
     .fetch_all(&state.pool)
