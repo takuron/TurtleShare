@@ -3,8 +3,8 @@ pub mod schema;
 
 use crate::error::{AppError, Result};
 use sqlx::{
-    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     SqlitePool,
+    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
 };
 use std::path::Path;
 use std::str::FromStr;

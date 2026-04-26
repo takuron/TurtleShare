@@ -284,8 +284,7 @@ async fn list_articles_sufficient_tier_accessible() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "tier_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "tier_user", "pass123").await;
 
     // 先创建覆盖未来时间的订阅（让文章创建时间在订阅期内）
     // 使用非常大的时间范围确保覆盖
@@ -321,8 +320,7 @@ async fn list_articles_mixed_visibility() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "mix_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "mix_user", "pass123").await;
 
     // 给用户 tier 1 的订阅（覆盖很大时间范围）
     create_subscription(
@@ -372,8 +370,7 @@ async fn list_articles_time_based_access() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "time_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "time_user", "pass123").await;
 
     // 给用户一个很早就过期的订阅
     create_subscription(
@@ -412,8 +409,7 @@ async fn get_article_detail_accessible() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "detail_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "detail_user", "pass123").await;
     create_subscription(
         &server,
         &admin_token,
@@ -509,12 +505,7 @@ async fn get_article_detail_insufficient_tier() {
     let body: Value = resp.json().await.unwrap();
     assert_eq!(body["success"], false);
     assert_eq!(body["error"]["code"], "FORBIDDEN");
-    assert!(
-        body["error"]["message"]
-            .as_str()
-            .unwrap()
-            .contains("tier")
-    );
+    assert!(body["error"]["message"].as_str().unwrap().contains("tier"));
 }
 
 /// 公开文章但等级不足也应返回 403（is_public 不授予完整访问权）。
@@ -547,8 +538,7 @@ async fn get_article_detail_expired_subscription() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "expired_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "expired_user", "pass123").await;
 
     // 很早就过期的 tier 3 订阅
     create_subscription(
@@ -637,8 +627,7 @@ async fn article_access_uses_max_overlapping_tier() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "overlap_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "overlap_user", "pass123").await;
 
     // 两个覆盖当前时间的订阅
     create_subscription(
@@ -686,10 +675,8 @@ async fn article_visibility_differs_by_user_tier() {
     let admin_token = server.admin_login().await;
 
     // 创建两个用户，不同等级
-    let user_a_hash =
-        create_test_user(&server, &admin_token, "tier_a_user", "pass_a").await;
-    let user_b_hash =
-        create_test_user(&server, &admin_token, "tier_b_user", "pass_b").await;
+    let user_a_hash = create_test_user(&server, &admin_token, "tier_a_user", "pass_a").await;
+    let user_b_hash = create_test_user(&server, &admin_token, "tier_b_user", "pass_b").await;
 
     create_subscription(
         &server,
@@ -718,18 +705,14 @@ async fn article_visibility_differs_by_user_tier() {
     create_test_article(&server, &admin_token, "Tier3 Only", 3, false).await;
 
     // 用户 A (tier 1) 应只看到 Tier1 Only
-    let resp_a = server
-        .get_with_token("/api/users/articles", &token_a)
-        .await;
+    let resp_a = server.get_with_token("/api/users/articles", &token_a).await;
     let body_a: Value = resp_a.json().await.unwrap();
     let articles_a = body_a["data"].as_array().unwrap();
     assert_eq!(articles_a.len(), 1);
     assert_eq!(articles_a[0]["title"], "Tier1 Only");
 
     // 用户 B (tier 3) 应看到两篇
-    let resp_b = server
-        .get_with_token("/api/users/articles", &token_b)
-        .await;
+    let resp_b = server.get_with_token("/api/users/articles", &token_b).await;
     let body_b: Value = resp_b.json().await.unwrap();
     let articles_b = body_b["data"].as_array().unwrap();
     assert_eq!(articles_b.len(), 2);
@@ -834,10 +817,7 @@ async fn article_path_traversal_in_hash_id() {
     let user_token = login_as_user(&server, "traversal_user", "pass123").await;
 
     let resp = server
-        .get_with_token(
-            "/api/users/articles/../../etc/passwd",
-            &user_token,
-        )
+        .get_with_token("/api/users/articles/../../etc/passwd", &user_token)
         .await;
 
     let status = resp.status().as_u16();

@@ -1,11 +1,11 @@
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation, Algorithm};
-use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
-use sha2::{Sha256, Digest};
-use uuid::Uuid;
-use base64::Engine;
 use crate::error::{AppError, Result};
+use base64::Engine;
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use sqlx::SqlitePool;
 use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
 /// JWT claims structure.
 ///
@@ -57,7 +57,12 @@ impl JwtManager {
     // // * `base_secret` - 来自 config.toml 的基础密钥
     // // * `expiry_hours` - 令牌过期时间（小时）
     // // * `rotation_days` - 密钥轮换前的天数
-    pub async fn new(pool: SqlitePool, base_secret: String, expiry_hours: u64, rotation_days: u64) -> Result<Self> {
+    pub async fn new(
+        pool: SqlitePool,
+        base_secret: String,
+        expiry_hours: u64,
+        rotation_days: u64,
+    ) -> Result<Self> {
         let manager = Self {
             pool,
             config_secret: base_secret,
@@ -86,12 +91,11 @@ impl JwtManager {
     // // 首次运行时初始化密钥或在需要时轮换。
     async fn initialize_or_rotate(&self) -> Result<()> {
         // 1. 检查当前密钥是否存在
-        let current: Option<(String,)> = sqlx::query_as(
-            "SELECT value FROM kv_store WHERE key = 'jwt_secret_current'"
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        let current: Option<(String,)> =
+            sqlx::query_as("SELECT value FROM kv_store WHERE key = 'jwt_secret_current'")
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
 
         if current.is_none() {
             // 2. 首次初始化
@@ -109,11 +113,14 @@ impl JwtManager {
     // // 首次初始化密钥。
     async fn initialize_secrets(&self) -> Result<()> {
         let secret = self.generate_secret();
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
 
         // 1. 插入当前密钥
         sqlx::query(
-            "INSERT INTO kv_store (key, value, created_at, updated_at) VALUES (?, ?, ?, ?)"
+            "INSERT INTO kv_store (key, value, created_at, updated_at) VALUES (?, ?, ?, ?)",
         )
         .bind("jwt_secret_current")
         .bind(&secret)
@@ -125,7 +132,7 @@ impl JwtManager {
 
         // 2. 插入创建时间
         sqlx::query(
-            "INSERT INTO kv_store (key, value, created_at, updated_at) VALUES (?, ?, ?, ?)"
+            "INSERT INTO kv_store (key, value, created_at, updated_at) VALUES (?, ?, ?, ?)",
         )
         .bind("jwt_secret_date")
         .bind(now.to_string())
@@ -143,18 +150,22 @@ impl JwtManager {
     // // 检查是否需要轮换并执行。
     pub async fn check_and_rotate(&self) -> Result<()> {
         // 1. 获取密钥创建时间
-        let date_str: (String,) = sqlx::query_as(
-            "SELECT value FROM kv_store WHERE key = 'jwt_secret_date'"
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        let date_str: (String,) =
+            sqlx::query_as("SELECT value FROM kv_store WHERE key = 'jwt_secret_date'")
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
 
-        let secret_timestamp: i64 = date_str.0.parse()
+        let secret_timestamp: i64 = date_str
+            .0
+            .parse()
             .map_err(|e| AppError::Internal(format!("Invalid timestamp format: {}", e)))?;
 
         // 2. 检查是否超过轮换周期
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
         let days_elapsed = (now - secret_timestamp) / 86400;
 
         if days_elapsed >= self.rotation_days as i64 {
@@ -169,22 +180,24 @@ impl JwtManager {
     // // 通过将当前密钥移至上一个并生成新的当前密钥来轮换密钥。
     async fn rotate_secrets(&self) -> Result<()> {
         // 1. 获取当前密钥
-        let current: (String,) = sqlx::query_as(
-            "SELECT value FROM kv_store WHERE key = 'jwt_secret_current'"
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        let current: (String,) =
+            sqlx::query_as("SELECT value FROM kv_store WHERE key = 'jwt_secret_current'")
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
 
         // 2. 生成新密钥
         let new_secret = self.generate_secret();
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
 
         // 3. 更新或插入上一个密钥
         sqlx::query(
             "INSERT INTO kv_store (key, value, created_at, updated_at)
              VALUES (?, ?, ?, ?)
-             ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?"
+             ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?",
         )
         .bind("jwt_secret_previous")
         .bind(&current.0)
@@ -198,7 +211,7 @@ impl JwtManager {
 
         // 4. 更新当前密钥
         sqlx::query(
-            "UPDATE kv_store SET value = ?, updated_at = ? WHERE key = 'jwt_secret_current'"
+            "UPDATE kv_store SET value = ?, updated_at = ? WHERE key = 'jwt_secret_current'",
         )
         .bind(&new_secret)
         .bind(now)
@@ -207,14 +220,12 @@ impl JwtManager {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         // 5. 更新密钥创建时间
-        sqlx::query(
-            "UPDATE kv_store SET value = ?, updated_at = ? WHERE key = 'jwt_secret_date'"
-        )
-        .bind(now.to_string())
-        .bind(now)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        sqlx::query("UPDATE kv_store SET value = ?, updated_at = ? WHERE key = 'jwt_secret_date'")
+            .bind(now.to_string())
+            .bind(now)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(())
     }
@@ -234,15 +245,17 @@ impl JwtManager {
     // // * `role` - 用户角色（"admin" 或 "user"）
     pub async fn generate_token(&self, sub: &str, name: &str, role: &str) -> Result<String> {
         // 1. 获取当前密钥
-        let secret: (String,) = sqlx::query_as(
-            "SELECT value FROM kv_store WHERE key = 'jwt_secret_current'"
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        let secret: (String,) =
+            sqlx::query_as("SELECT value FROM kv_store WHERE key = 'jwt_secret_current'")
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
 
         // 2. 创建声明
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
         let exp = now + (self.expiry_hours as i64 * 3600);
 
         let claims = Claims {
@@ -261,7 +274,7 @@ impl JwtManager {
         let token = encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(&secret_bytes)
+            &EncodingKey::from_secret(&secret_bytes),
         )
         .map_err(|e| AppError::Internal(format!("Failed to encode token: {}", e)))?;
 
@@ -285,12 +298,11 @@ impl JwtManager {
     // // 如果有效，返回解码的声明。
     pub async fn verify_token(&self, token: &str) -> Result<Claims> {
         // 1. 获取当前密钥
-        let current: (String,) = sqlx::query_as(
-            "SELECT value FROM kv_store WHERE key = 'jwt_secret_current'"
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        let current: (String,) =
+            sqlx::query_as("SELECT value FROM kv_store WHERE key = 'jwt_secret_current'")
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
 
         // 2. 尝试使用当前密钥验证
         if let Ok(claims) = self.verify_with_secret(token, &current.0) {
@@ -298,12 +310,11 @@ impl JwtManager {
         }
 
         // 3. 尝试使用上一个密钥验证
-        let previous: Option<(String,)> = sqlx::query_as(
-            "SELECT value FROM kv_store WHERE key = 'jwt_secret_previous'"
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        let previous: Option<(String,)> =
+            sqlx::query_as("SELECT value FROM kv_store WHERE key = 'jwt_secret_previous'")
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
 
         if let Some(prev) = previous {
             if let Ok(claims) = self.verify_with_secret(token, &prev.0) {
@@ -325,12 +336,9 @@ impl JwtManager {
         let mut validation = Validation::new(Algorithm::HS256);
         validation.validate_exp = true;
 
-        let token_data = decode::<Claims>(
-            token,
-            &DecodingKey::from_secret(&secret_bytes),
-            &validation
-        )
-        .map_err(|_| AppError::Unauthorized("Invalid token".to_string()))?;
+        let token_data =
+            decode::<Claims>(token, &DecodingKey::from_secret(&secret_bytes), &validation)
+                .map_err(|_| AppError::Unauthorized("Invalid token".to_string()))?;
 
         Ok(token_data.claims)
     }

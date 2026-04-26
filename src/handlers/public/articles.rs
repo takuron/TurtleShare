@@ -11,9 +11,9 @@ use serde::Serialize;
 
 use crate::error::AppError;
 use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery, SearchQuery};
+use crate::handlers::public::PublicState;
 use crate::models::article::Article;
 use crate::utils::hashid::HashIdManager;
-use crate::handlers::public::PublicState;
 
 /// Article list item for public article list.
 ///
@@ -361,7 +361,7 @@ pub async fn get_search_page_count(
     let search_pattern = format!("%{}%", search_term);
 
     let total_items: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM articles WHERE is_public = 1 AND (title LIKE ? OR content LIKE ?)"
+        "SELECT COUNT(*) FROM articles WHERE is_public = 1 AND (title LIKE ? OR content LIKE ?)",
     )
     .bind(&search_pattern)
     .bind(&search_pattern)

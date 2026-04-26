@@ -4,7 +4,7 @@
 // 和 GET /api/public/tier-descriptions 是否按照 docs/api.md 的规范正确响应。
 
 use super::common;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 // =========================================================================
 // GET /api/public/tier-descriptions — 无等级说明时
@@ -118,7 +118,9 @@ async fn put_tier_description_success() {
     assert_eq!(body["success"], true);
 
     // 3. tiers 数组应包含刚创建的等级说明
-    let tiers = body["data"]["tiers"].as_array().expect("tiers should be an array");
+    let tiers = body["data"]["tiers"]
+        .as_array()
+        .expect("tiers should be an array");
     assert_eq!(tiers.len(), 1);
     assert_eq!(tiers[0]["tier"], 1);
     assert_eq!(tiers[0]["name"], "Basic");
@@ -170,7 +172,9 @@ async fn public_tier_descriptions_returns_created_content() {
     let body: Value = get_resp.json().await.unwrap();
     assert_eq!(body["success"], true);
 
-    let tiers = body["data"]["tiers"].as_array().expect("tiers should be an array");
+    let tiers = body["data"]["tiers"]
+        .as_array()
+        .expect("tiers should be an array");
     assert_eq!(tiers.len(), 1);
     assert_eq!(tiers[0]["tier"], 1);
     assert_eq!(tiers[0]["name"], "Basic");
@@ -321,11 +325,7 @@ async fn put_tier_description_only_tier_returns_400() {
     let token = server.admin_login().await;
 
     let resp = server
-        .put_json_with_token(
-            "/api/admin/tier-descriptions",
-            &json!({"tier": 1}),
-            &token,
-        )
+        .put_json_with_token("/api/admin/tier-descriptions", &json!({"tier": 1}), &token)
         .await;
 
     // 至少需要 name、description、price 中的一个非空

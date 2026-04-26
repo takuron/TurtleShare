@@ -2,9 +2,9 @@
 //
 // // 静态文件服务
 
+use axum::Router;
 use axum::http::{StatusCode, Uri, header};
 use axum::response::IntoResponse;
-use axum::Router;
 use tower_http::services::ServeDir;
 
 /// Creates routes for serving static files.

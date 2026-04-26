@@ -485,14 +485,13 @@ pub async fn get_search_page_count(
     let search_term = query.q.unwrap_or_default();
     let search_pattern = format!("%{}%", search_term);
 
-    let total_items: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM articles WHERE title LIKE ? OR content LIKE ?"
-    )
-    .bind(&search_pattern)
-    .bind(&search_pattern)
-    .fetch_one(&state.pool)
-    .await
-    .map_err(|e| AppError::Database(e.to_string()))?;
+    let total_items: (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM articles WHERE title LIKE ? OR content LIKE ?")
+            .bind(&search_pattern)
+            .bind(&search_pattern)
+            .fetch_one(&state.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
 
     let total_items = total_items.0 as u32;
     let total_pages = (total_items + page_size - 1) / page_size;

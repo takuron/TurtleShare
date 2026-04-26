@@ -2,9 +2,9 @@
 //
 // // 公开处理器模块 - 公开 API 端点和静态文件服务
 
+pub mod announcement;
 pub mod api;
 pub mod articles;
-pub mod announcement;
 pub mod tier_descriptions;
 
 use crate::config::SiteInfoConfig;
@@ -39,8 +39,8 @@ pub struct PublicState {
 // // * `state` - 包含连接池和 HashID 管理器的共享公开状态
 pub fn routes(siteinfo: SiteInfoConfig, state: PublicState) -> Router {
     // 1. 将 toml::Table 转换为 serde_json::Value，以便 JSON 序列化。
-    let siteinfo_json: serde_json::Value =
-        serde_json::to_value(&siteinfo).unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+    let siteinfo_json: serde_json::Value = serde_json::to_value(&siteinfo)
+        .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
 
     Router::new()
         .route("/api", get(api::health_check_text))

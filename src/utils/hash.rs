@@ -1,7 +1,7 @@
-use argon2::{Argon2, Algorithm, Version, Params, PasswordHasher};
-use password_hash::phc::PasswordHash;
-use password_hash::PasswordVerifier;
 use crate::error::{AppError, Result};
+use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
+use password_hash::PasswordVerifier;
+use password_hash::phc::PasswordHash;
 
 /// Creates Argon2id parameters: t=2, m=19456 (19MB), p=1
 //
@@ -42,7 +42,8 @@ pub fn hash_password(password: &str) -> Result<String> {
     let argon2 = Argon2::new(Algorithm::Argon2id, Version::default(), get_argon2_params());
 
     // 2. 执行哈希计算（新版本会自动生成盐值）。
-    let password_hash = argon2.hash_password(password.as_bytes())
+    let password_hash = argon2
+        .hash_password(password.as_bytes())
         .map_err(|e| AppError::Hash(format!("Failed to hash password: {}", e)))?
         .to_string();
 
@@ -110,7 +111,12 @@ mod tests {
     fn test_invalid_hash_format() {
         let result = verify_password("any_password", "invalid_hash");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid password hash format"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Invalid password hash format")
+        );
     }
 
     #[test]

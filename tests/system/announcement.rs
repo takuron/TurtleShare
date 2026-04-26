@@ -4,7 +4,7 @@
 // 是否按照 docs/api.md 的规范正确响应。
 
 use super::common;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 // =========================================================================
 // GET /api/public/announcement — 无公告时
@@ -25,7 +25,10 @@ async fn public_announcement_returns_null_when_none_exists() {
     // 2. 验证响应体：data 应为 null
     let body: Value = resp.json().await.unwrap();
     assert_eq!(body["success"], true);
-    assert!(body["data"].is_null(), "data should be null when no announcement exists");
+    assert!(
+        body["data"].is_null(),
+        "data should be null when no announcement exists"
+    );
 }
 
 // =========================================================================
@@ -78,8 +81,13 @@ async fn put_announcement_success() {
     assert_eq!(body["data"]["content"], content);
 
     // 3. updated_at 应为正整数（Unix 时间戳）
-    let updated_at = body["data"]["updated_at"].as_i64().expect("updated_at should be integer");
-    assert!(updated_at > 0, "updated_at should be a positive Unix timestamp");
+    let updated_at = body["data"]["updated_at"]
+        .as_i64()
+        .expect("updated_at should be integer");
+    assert!(
+        updated_at > 0,
+        "updated_at should be a positive Unix timestamp"
+    );
 }
 
 // =========================================================================
@@ -114,7 +122,9 @@ async fn public_announcement_returns_published_content() {
     assert_eq!(body["data"]["content"], content);
 
     // 3. updated_at 应为正整数
-    let updated_at = body["data"]["updated_at"].as_i64().expect("updated_at should be integer");
+    let updated_at = body["data"]["updated_at"]
+        .as_i64()
+        .expect("updated_at should be integer");
     assert!(updated_at > 0);
 }
 
@@ -179,11 +189,7 @@ async fn put_announcement_empty_content_deletes_announcement() {
 
     // 2. 发送空内容删除公告
     let resp = server
-        .put_json_with_token(
-            "/api/admin/announcement",
-            &json!({"content": ""}),
-            &token,
-        )
+        .put_json_with_token("/api/admin/announcement", &json!({"content": ""}), &token)
         .await;
 
     // 3. 验证状态码
@@ -197,7 +203,10 @@ async fn put_announcement_empty_content_deletes_announcement() {
     // 5. 公开接口也应返回 null
     let get_resp = server.get("/api/public/announcement").await;
     let get_body: Value = get_resp.json().await.unwrap();
-    assert!(get_body["data"].is_null(), "public data should be null after deletion");
+    assert!(
+        get_body["data"].is_null(),
+        "public data should be null after deletion"
+    );
 }
 
 // =========================================================================
@@ -248,11 +257,7 @@ async fn put_announcement_empty_content_when_none_exists() {
     let token = server.admin_login().await;
 
     let resp = server
-        .put_json_with_token(
-            "/api/admin/announcement",
-            &json!({"content": ""}),
-            &token,
-        )
+        .put_json_with_token("/api/admin/announcement", &json!({"content": ""}), &token)
         .await;
 
     assert_eq!(resp.status(), 200);
@@ -352,7 +357,12 @@ async fn put_announcement_updated_at_changes_on_update() {
     let ts2 = body2["data"]["updated_at"].as_i64().unwrap();
 
     // 3. 第二次的时间戳应 >= 第一次
-    assert!(ts2 >= ts1, "updated_at should not decrease: {} >= {}", ts2, ts1);
+    assert!(
+        ts2 >= ts1,
+        "updated_at should not decrease: {} >= {}",
+        ts2,
+        ts1
+    );
 }
 
 // =========================================================================

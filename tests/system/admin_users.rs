@@ -4,18 +4,14 @@
 // 包含正常操作、边界条件、错误输入和安全测试。
 
 use super::common;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 // ============================================================
 // 辅助函数
 // ============================================================
 
 /// 创建一个用户并返回其 hash_id。
-async fn create_test_user(
-    server: &common::TestServer,
-    token: &str,
-    username: &str,
-) -> String {
+async fn create_test_user(server: &common::TestServer, token: &str, username: &str) -> String {
     let resp = server
         .post_json_with_token(
             "/api/admin/users",
@@ -391,10 +387,7 @@ async fn user_tier_defaults_to_zero() {
     let hash_id = create_test_user(&server, &token, "no_sub_user").await;
 
     let resp = server
-        .get_with_token(
-            &format!("/api/admin/users/{}/tier", hash_id),
-            &token,
-        )
+        .get_with_token(&format!("/api/admin/users/{}/tier", hash_id), &token)
         .await;
 
     assert_eq!(resp.status(), 200);
@@ -493,25 +486,16 @@ async fn all_admin_user_routes_require_auth() {
     assert_eq!(resp.status(), 401);
 
     // GET /api/admin/users/:id
-    assert_eq!(
-        server.get("/api/admin/users/abc123").await.status(),
-        401
-    );
+    assert_eq!(server.get("/api/admin/users/abc123").await.status(), 401);
 
     // PUT /api/admin/users/:id
     let resp = server
-        .put_json(
-            "/api/admin/users/abc123",
-            &json!({"username": "x"}),
-        )
+        .put_json("/api/admin/users/abc123", &json!({"username": "x"}))
         .await;
     assert_eq!(resp.status(), 401);
 
     // DELETE /api/admin/users/:id
-    assert_eq!(
-        server.delete("/api/admin/users/abc123").await.status(),
-        401
-    );
+    assert_eq!(server.delete("/api/admin/users/abc123").await.status(), 401);
 
     // GET /api/admin/users/:id/tier
     assert_eq!(

@@ -169,9 +169,10 @@ pub async fn upload_file(
                 }
             }
 
-            temp_file.flush().await.map_err(|e| {
-                AppError::Internal(format!("Failed to flush temp file: {}", e))
-            })?;
+            temp_file
+                .flush()
+                .await
+                .map_err(|e| AppError::Internal(format!("Failed to flush temp file: {}", e)))?;
             drop(temp_file);
 
             upload_info = Some((original_name, temp_path, total_size));
@@ -179,8 +180,8 @@ pub async fn upload_file(
         }
     }
 
-    let (original_name, temp_path, file_size) =
-        upload_info.ok_or_else(|| AppError::ValidationError("No file field provided".to_string()))?;
+    let (original_name, temp_path, file_size) = upload_info
+        .ok_or_else(|| AppError::ValidationError("No file field provided".to_string()))?;
 
     if file_size == 0 {
         let _ = tokio::fs::remove_file(&temp_path).await;

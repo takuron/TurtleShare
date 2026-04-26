@@ -1,4 +1,4 @@
-// User articles handler with time-based tier access control
+﻿// User articles handler with time-based tier access control
 //
 // // 用户文章处理器，带基于时间的等级访问控制
 
@@ -311,7 +311,7 @@ pub async fn get_articles_page_count(
     let mut total_items = 0;
     for article in &articles {
         let user_tier_at_publish =
-            get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
 
         let can_access = user_tier_at_publish >= article.required_tier;
 
@@ -375,7 +375,8 @@ pub async fn list_articles_paginated(
 
     let mut items: Vec<ArticleListItem> = Vec::new();
     for article in &articles {
-        let user_tier_at_publish = get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+        let user_tier_at_publish =
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
 
         let can_access = user_tier_at_publish >= article.required_tier;
 
@@ -461,19 +462,19 @@ pub async fn search_articles(
         "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
          FROM articles
          WHERE title LIKE ? OR content LIKE ?
-         ORDER BY publish_at DESC
-         LIMIT ?"
+         ORDER BY publish_at DESC"
     )
     .bind(&search_pattern)
     .bind(&search_pattern)
-    .bind(page_size)
     .fetch_all(&state.pool)
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
 
+    // 1. 先按用户权限过滤，再截取结果，避免 SQL LIMIT 截到不可见文章导致返回数量不足。
     let mut items: Vec<ArticleListItem> = Vec::new();
     for article in &articles {
-        let user_tier_at_publish = get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
+        let user_tier_at_publish =
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
 
         let can_access = user_tier_at_publish >= article.required_tier;
 
@@ -481,6 +482,8 @@ pub async fn search_articles(
             items.push(article.to_list_item(&state.hashid_manager, user_tier_at_publish)?);
         }
     }
+
+    items.truncate(page_size as usize);
 
     Ok(Json(ApiResponse {
         success: true,
@@ -524,7 +527,8 @@ pub async fn get_search_page_count(
 
     let mut total_items = 0;
     for article in &articles {
-        let user_tier_at_publish = get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+        let user_tier_at_publish =
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
 
         let can_access = user_tier_at_publish >= article.required_tier;
 
@@ -585,7 +589,8 @@ pub async fn search_articles_paginated(
 
     let mut items: Vec<ArticleListItem> = Vec::new();
     for article in &articles {
-        let user_tier_at_publish = get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+        let user_tier_at_publish =
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
 
         let can_access = user_tier_at_publish >= article.required_tier;
 

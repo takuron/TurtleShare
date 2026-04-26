@@ -115,9 +115,7 @@ async fn user_token_cannot_access_admin_routes() {
     let user_token = body["data"]["token"].as_str().unwrap();
 
     // 尝试访问管理员端点
-    let admin_resp = server
-        .get_with_token("/api/admin/users", user_token)
-        .await;
+    let admin_resp = server.get_with_token("/api/admin/users", user_token).await;
     assert_eq!(admin_resp.status(), 403);
 }
 
@@ -204,7 +202,11 @@ async fn user_login_empty_body() {
 
     // 缺少必填字段应该返回错误
     let status = resp.status().as_u16();
-    assert!(status == 400 || status == 422, "Expected 400 or 422, got {}", status);
+    assert!(
+        status == 400 || status == 422,
+        "Expected 400 or 422, got {}",
+        status
+    );
 }
 
 // ============================================================
@@ -309,8 +311,7 @@ async fn deleted_user_cannot_login() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let hash_id =
-        create_test_user(&server, &admin_token, "deleted_user", "del_pass_123").await;
+    let hash_id = create_test_user(&server, &admin_token, "deleted_user", "del_pass_123").await;
 
     // 确认可以登录
     let resp = user_login(&server, "deleted_user", "del_pass_123").await;
@@ -333,8 +334,7 @@ async fn login_after_admin_password_change() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let hash_id =
-        create_test_user(&server, &admin_token, "pw_change_user", "old_password").await;
+    let hash_id = create_test_user(&server, &admin_token, "pw_change_user", "old_password").await;
 
     // 旧密码可以登录
     let resp = user_login(&server, "pw_change_user", "old_password").await;
@@ -380,8 +380,5 @@ async fn all_user_routes_require_auth() {
     assert_eq!(server.get("/api/users/articles").await.status(), 401);
 
     // GET /api/articles/:hash_id (user article detail)
-    assert_eq!(
-        server.get("/api/users/articles/abc123").await.status(),
-        401
-    );
+    assert_eq!(server.get("/api/users/articles/abc123").await.status(), 401);
 }

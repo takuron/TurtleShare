@@ -7,7 +7,6 @@
 // //
 // // 使用 `kv_store` 表跟踪当前数据库架构版本。
 // // 启动时检查版本并应用必要的升级。
-
 use crate::error::{AppError, Result};
 use sqlx::SqlitePool;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -80,8 +79,7 @@ pub async fn check_and_upgrade(pool: &SqlitePool) -> Result<()> {
         Some(v) => {
             return Err(AppError::Database(format!(
                 "Database version {} is newer than the supported version {}. Please update the application.",
-                v,
-                CURRENT_DB_VERSION
+                v, CURRENT_DB_VERSION
             )));
         }
     }
@@ -99,13 +97,11 @@ pub async fn check_and_upgrade(pool: &SqlitePool) -> Result<()> {
 // // # 返回
 // // 如果版本键存在则返回 `Some(version)`，否则返回 `None`。
 async fn get_version(pool: &SqlitePool) -> Result<Option<i64>> {
-    let result: Option<(String,)> = sqlx::query_as(
-        "SELECT value FROM kv_store WHERE key = ?",
-    )
-    .bind(DB_VERSION_KEY)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| AppError::Database(format!("Failed to read database version: {}", e)))?;
+    let result: Option<(String,)> = sqlx::query_as("SELECT value FROM kv_store WHERE key = ?")
+        .bind(DB_VERSION_KEY)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| AppError::Database(format!("Failed to read database version: {}", e)))?;
 
     match result {
         Some((v,)) => {
@@ -174,7 +170,11 @@ async fn upgrade_from(pool: &SqlitePool, from_version: i64) -> Result<()> {
 
     while current < CURRENT_DB_VERSION {
         let target = current + 1;
-        tracing::info!("Upgrading database from version {} to {}...", current, target);
+        tracing::info!(
+            "Upgrading database from version {} to {}...",
+            current,
+            target
+        );
 
         match target {
             2 => migrate_v1_to_v2(pool).await?,
@@ -187,8 +187,7 @@ async fn upgrade_from(pool: &SqlitePool, from_version: i64) -> Result<()> {
             _ => {
                 return Err(AppError::Database(format!(
                     "No migration path from version {} to {}",
-                    current,
-                    target
+                    current, target
                 )));
             }
         }
@@ -232,7 +231,9 @@ async fn migrate_v1_to_v2(_pool: &SqlitePool) -> Result<()> {
     //
     // ============================================================
 
-    tracing::info!("Migration v1->v2: No new tables in this migration. Placeholder ready for future tables.");
+    tracing::info!(
+        "Migration v1->v2: No new tables in this migration. Placeholder ready for future tables."
+    );
 
     Ok(())
 }
