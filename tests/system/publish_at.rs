@@ -239,8 +239,7 @@ async fn update_article_without_publish_at_preserves_value() {
 
     let custom_ts: i64 = 1_600_000_000;
     let data =
-        create_article_with_publish_at(&server, &token, "Preserve", 0, true, Some(custom_ts))
-            .await;
+        create_article_with_publish_at(&server, &token, "Preserve", 0, true, Some(custom_ts)).await;
     let hash_id = data["hash_id"].as_str().unwrap();
 
     // 只更新标题，不提供 publish_at
@@ -354,8 +353,7 @@ async fn user_access_uses_publish_at_not_created_at() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "publish_at_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "publish_at_user", "pass123").await;
 
     // 订阅时段：1_500_000_000 ~ 1_600_000_000
     create_subscription(
@@ -414,8 +412,7 @@ async fn user_list_accessible_based_on_publish_at() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "list_pa_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "list_pa_user", "pass123").await;
 
     // 订阅：1_500_000_000 ~ 1_600_000_000, tier 2
     create_subscription(
@@ -648,15 +645,9 @@ async fn admin_detail_has_both_publish_at_and_created_at() {
     let token = server.admin_login().await;
 
     let custom_ts: i64 = 1_600_000_000;
-    let data = create_article_with_publish_at(
-        &server,
-        &token,
-        "Admin Detail",
-        0,
-        true,
-        Some(custom_ts),
-    )
-    .await;
+    let data =
+        create_article_with_publish_at(&server, &token, "Admin Detail", 0, true, Some(custom_ts))
+            .await;
     let hash_id = data["hash_id"].as_str().unwrap();
 
     let resp = server

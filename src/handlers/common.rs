@@ -21,6 +21,15 @@ pub struct PaginationQuery {
     pub page_size: Option<u32>,
 }
 
+/// Common query parameters for search.
+//
+// // 用于搜索的常见查询参数。
+#[derive(Deserialize)]
+pub struct SearchQuery {
+    pub q: Option<String>,
+    pub page_size: Option<u32>,
+}
+
 /// Response containing pagination count metadata.
 //
 // // 包含分页计数元数据的响应。

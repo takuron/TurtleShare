@@ -111,8 +111,8 @@ async fn upload_binary_file() {
 
     // 模拟一个小的二进制文件（PNG 文件头）
     let binary_content: Vec<u8> = vec![
-        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44,
+        0x52,
     ];
     let expected_sha256 = sha256_hex(&binary_content);
 
@@ -248,9 +248,7 @@ async fn list_files_empty() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
-    let resp = server
-        .get_with_token("/api/admin/files", &token)
-        .await;
+    let resp = server.get_with_token("/api/admin/files", &token).await;
 
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
@@ -271,9 +269,7 @@ async fn list_files_returns_all_ordered() {
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
     upload_test_file(&server, &token, "file_c.txt", b"ccc").await;
 
-    let resp = server
-        .get_with_token("/api/admin/files", &token)
-        .await;
+    let resp = server.get_with_token("/api/admin/files", &token).await;
 
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
@@ -390,15 +386,16 @@ async fn delete_file_success() {
     assert_eq!(body["data"]["hash_id"], hash_id);
 
     // 验证文件已从列表中移除
-    let list_resp = server
-        .get_with_token("/api/admin/files", &token)
-        .await;
+    let list_resp = server.get_with_token("/api/admin/files", &token).await;
     let list_body: Value = list_resp.json().await.unwrap();
     assert!(list_body["data"].as_array().unwrap().is_empty());
 
     // 验证磁盘上的文件目录已删除
     let dir_path = server.files_path.join(&uuid);
-    assert!(!dir_path.exists(), "File directory should be deleted from disk");
+    assert!(
+        !dir_path.exists(),
+        "File directory should be deleted from disk"
+    );
 
     // 删除后通过静态路径应返回 404
     let post_dl = server.get(&format!("/files/{}/to_delete.txt", uuid)).await;
@@ -462,10 +459,7 @@ async fn all_file_routes_require_auth() {
     assert_eq!(server.get("/api/admin/files").await.status(), 401);
 
     // GET /api/admin/files/:hash_id
-    assert_eq!(
-        server.get("/api/admin/files/abc123").await.status(),
-        401
-    );
+    assert_eq!(server.get("/api/admin/files/abc123").await.status(), 401);
 
     // POST /api/admin/files (multipart without auth)
     let part = multipart::Part::bytes(b"test".to_vec())
@@ -483,10 +477,7 @@ async fn all_file_routes_require_auth() {
     assert_eq!(resp.status(), 401);
 
     // DELETE /api/admin/files/:hash_id
-    assert_eq!(
-        server.delete("/api/admin/files/abc123").await.status(),
-        401
-    );
+    assert_eq!(server.delete("/api/admin/files/abc123").await.status(), 401);
 }
 
 /// 文件名中包含路径遍历字符不应影响存储安全，下载内容应正确。
@@ -522,8 +513,16 @@ async fn upload_file_path_traversal_filename() {
     assert!(file_dir.exists(), "File should be stored in UUID directory");
 
     // 不应在 files_path 之外创建文件
-    let escaped_path = server.files_path.parent().unwrap().join("etc").join("passwd");
-    assert!(!escaped_path.exists(), "Path traversal should not escape storage directory");
+    let escaped_path = server
+        .files_path
+        .parent()
+        .unwrap()
+        .join("etc")
+        .join("passwd");
+    assert!(
+        !escaped_path.exists(),
+        "Path traversal should not escape storage directory"
+    );
 
     // 通过静态路径下载清理后的文件名并校验 SHA256
     let download_resp = server.get(&format!("/files/{}/passwd", uuid)).await;

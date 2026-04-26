@@ -1,5 +1,5 @@
-use harsh::Harsh;
 use crate::error::{AppError, Result};
+use harsh::Harsh;
 
 /// HashID manager for encoding/decoding user IDs.
 ///
@@ -73,11 +73,16 @@ impl HashIdManager {
     // // # 返回
     // // 返回解码的数字 ID。
     pub fn decode(&self, hash: &str) -> Result<i64> {
-        let decoded = self.harsh.decode(hash)
+        let decoded = self
+            .harsh
+            .decode(hash)
             .map_err(|_| AppError::InvalidHashId(format!("Invalid hash ID: {}", hash)))?;
 
         if decoded.is_empty() {
-            return Err(AppError::InvalidHashId(format!("Invalid hash ID: {}", hash)));
+            return Err(AppError::InvalidHashId(format!(
+                "Invalid hash ID: {}",
+                hash
+            )));
         }
 
         Ok(decoded[0] as i64)

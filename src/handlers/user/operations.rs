@@ -7,7 +7,11 @@ use crate::error::AppError;
 use crate::handlers::common::ApiResponse;
 use crate::middleware::auth::AuthClaims;
 use crate::utils::hash;
-use axum::{Json, extract::{Query, State}, response::IntoResponse};
+use axum::{
+    Json,
+    extract::{Query, State},
+    response::IntoResponse,
+};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 

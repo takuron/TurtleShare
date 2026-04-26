@@ -6,11 +6,7 @@ use super::auth::AdminState;
 use crate::error::AppError;
 use crate::handlers::common::ApiResponse;
 use crate::models::announcement::{AnnouncementData, PublishAnnouncementRequest};
-use axum::{
-    Json,
-    extract::State,
-    response::IntoResponse,
-};
+use axum::{Json, extract::State, response::IntoResponse};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Publish or update the site announcement.
@@ -83,7 +79,7 @@ pub async fn publish_announcement(
     // 4. 使用 UPSERT 存入 kv_store
     sqlx::query(
         "INSERT INTO kv_store (key, value, created_at, updated_at) VALUES (?, ?, ?, ?)
-         ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?"
+         ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?",
     )
     .bind("announcement")
     .bind(&value)

@@ -147,14 +147,18 @@ featured_ids = [1, 2, 3]
     let data = &body["data"];
 
     // 1. 字符串数组
-    let nav_links = data["nav_links"].as_array().expect("nav_links should be array");
+    let nav_links = data["nav_links"]
+        .as_array()
+        .expect("nav_links should be array");
     assert_eq!(nav_links.len(), 3);
     assert_eq!(nav_links[0], "Home");
     assert_eq!(nav_links[1], "About");
     assert_eq!(nav_links[2], "Contact");
 
     // 2. 整数数组
-    let featured_ids = data["featured_ids"].as_array().expect("featured_ids should be array");
+    let featured_ids = data["featured_ids"]
+        .as_array()
+        .expect("featured_ids should be array");
     assert_eq!(featured_ids.len(), 3);
     assert_eq!(featured_ids[0], 1);
     assert_eq!(featured_ids[2], 3);
@@ -268,7 +272,9 @@ icon = "info"
     let data = &body["data"];
 
     // 表数组应映射为 JSON 对象数组
-    let items = data["menu_items"].as_array().expect("menu_items should be array");
+    let items = data["menu_items"]
+        .as_array()
+        .expect("menu_items should be array");
     assert_eq!(items.len(), 3);
     assert_eq!(items[0]["label"], "Home");
     assert_eq!(items[0]["href"], "/");
@@ -301,7 +307,10 @@ async fn site_info_empty_section() {
 
     // 空 section 应该返回空对象 {}
     let data = body["data"].as_object().expect("data should be an object");
-    assert!(data.is_empty(), "empty [siteinfo] should produce empty object");
+    assert!(
+        data.is_empty(),
+        "empty [siteinfo] should produce empty object"
+    );
 }
 
 /// Tests that empty string values are preserved (not null).
@@ -456,12 +465,24 @@ async fn site_info_does_not_leak_other_config_sections() {
 
     // 不应包含任何其他配置节的字段
     assert!(data.get("admin").is_none(), "admin config must not leak");
-    assert!(data.get("password_hash").is_none(), "password_hash must not leak");
+    assert!(
+        data.get("password_hash").is_none(),
+        "password_hash must not leak"
+    );
     assert!(data.get("jwt").is_none(), "jwt config must not leak");
-    assert!(data.get("base_secret").is_none(), "base_secret must not leak");
-    assert!(data.get("database").is_none(), "database config must not leak");
+    assert!(
+        data.get("base_secret").is_none(),
+        "base_secret must not leak"
+    );
+    assert!(
+        data.get("database").is_none(),
+        "database config must not leak"
+    );
     assert!(data.get("server").is_none(), "server config must not leak");
-    assert!(data.get("storage").is_none(), "storage config must not leak");
+    assert!(
+        data.get("storage").is_none(),
+        "storage config must not leak"
+    );
     assert!(data.get("host").is_none(), "host must not leak");
     assert!(data.get("port").is_none(), "port must not leak");
 

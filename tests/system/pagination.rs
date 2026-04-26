@@ -5,7 +5,7 @@
 // 用户文章分页和公开文章分页。
 
 use super::common;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 // ============================================================
 // 辅助函数
@@ -58,11 +58,7 @@ async fn create_test_article(
 }
 
 /// 批量创建用户，返回所有 hash_id。
-async fn create_users_batch(
-    server: &common::TestServer,
-    token: &str,
-    count: usize,
-) -> Vec<String> {
+async fn create_users_batch(server: &common::TestServer, token: &str, count: usize) -> Vec<String> {
     let mut ids = Vec::new();
     for i in 0..count {
         let id = create_test_user(server, token, &format!("page_user_{}", i)).await;
@@ -121,9 +117,7 @@ async fn admin_users_page_info_empty() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
-    let resp = server
-        .get_with_token("/api/admin/users/page", &token)
-        .await;
+    let resp = server.get_with_token("/api/admin/users/page", &token).await;
 
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
@@ -140,9 +134,7 @@ async fn admin_users_page_info_single_page() {
 
     create_users_batch(&server, &token, 5).await;
 
-    let resp = server
-        .get_with_token("/api/admin/users/page", &token)
-        .await;
+    let resp = server.get_with_token("/api/admin/users/page", &token).await;
 
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
@@ -449,9 +441,7 @@ async fn admin_files_page_info_empty() {
     let server = common::TestServer::spawn().await;
     let token = server.admin_login().await;
 
-    let resp = server
-        .get_with_token("/api/admin/files/page", &token)
-        .await;
+    let resp = server.get_with_token("/api/admin/files/page", &token).await;
 
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
@@ -504,9 +494,7 @@ async fn public_articles_page_info_only_public() {
     create_articles_batch(&server, &token, 3, true, 0).await;
     create_articles_batch(&server, &token, 2, false, 0).await;
 
-    let resp = server
-        .get("/api/public/articles/page?page_size=20")
-        .await;
+    let resp = server.get("/api/public/articles/page?page_size=20").await;
 
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
@@ -522,9 +510,7 @@ async fn public_articles_page_info_custom_size() {
 
     create_articles_batch(&server, &token, 5, true, 0).await;
 
-    let resp = server
-        .get("/api/public/articles/page?page_size=2")
-        .await;
+    let resp = server.get("/api/public/articles/page?page_size=2").await;
 
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
@@ -555,9 +541,7 @@ async fn public_articles_page_content() {
     create_articles_batch(&server, &token, 5, true, 0).await;
 
     // 第一页
-    let resp = server
-        .get("/api/public/articles/page/1?page_size=2")
-        .await;
+    let resp = server.get("/api/public/articles/page/1?page_size=2").await;
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
     let articles = body["data"].as_array().unwrap();
@@ -574,9 +558,7 @@ async fn public_articles_page_excludes_private() {
     create_articles_batch(&server, &token, 2, true, 0).await;
     create_articles_batch(&server, &token, 3, false, 0).await;
 
-    let resp = server
-        .get("/api/public/articles/page/1?page_size=20")
-        .await;
+    let resp = server.get("/api/public/articles/page/1?page_size=20").await;
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
     let articles = body["data"].as_array().unwrap();
@@ -594,9 +576,7 @@ async fn public_articles_page_has_accessible_field() {
     // tier>0 的公开文章 accessible=false
     create_test_article(&server, &token, "Premium Public", true, 2).await;
 
-    let resp = server
-        .get("/api/public/articles/page/1?page_size=20")
-        .await;
+    let resp = server.get("/api/public/articles/page/1?page_size=20").await;
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
     let articles = body["data"].as_array().unwrap();
@@ -622,9 +602,7 @@ async fn public_articles_page_excludes_content_fields() {
 
     create_test_article(&server, &token, "Fields Check", true, 0).await;
 
-    let resp = server
-        .get("/api/public/articles/page/1")
-        .await;
+    let resp = server.get("/api/public/articles/page/1").await;
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
     let articles = body["data"].as_array().unwrap();
@@ -771,9 +749,7 @@ async fn admin_users_pagination_covers_all_items() {
     create_users_batch(&server, &token, 7).await;
 
     // 获取全部用户
-    let all_resp = server
-        .get_with_token("/api/admin/users", &token)
-        .await;
+    let all_resp = server.get_with_token("/api/admin/users", &token).await;
     let all_body: Value = all_resp.json().await.unwrap();
     let all_users = all_body["data"].as_array().unwrap();
     assert_eq!(all_users.len(), 7);
@@ -813,9 +789,7 @@ async fn admin_articles_pagination_covers_all_items() {
     create_articles_batch(&server, &token, 5, true, 0).await;
 
     // 获取全部文章
-    let all_resp = server
-        .get_with_token("/api/admin/articles", &token)
-        .await;
+    let all_resp = server.get_with_token("/api/admin/articles", &token).await;
     let all_body: Value = all_resp.json().await.unwrap();
     let all_articles = all_body["data"].as_array().unwrap();
     assert_eq!(all_articles.len(), 5);
@@ -885,9 +859,7 @@ async fn admin_users_default_page_size() {
     create_users_batch(&server, &token, 21).await;
 
     // 不指定 page_size，默认 20
-    let resp = server
-        .get_with_token("/api/admin/users/page", &token)
-        .await;
+    let resp = server.get_with_token("/api/admin/users/page", &token).await;
     let body: Value = resp.json().await.unwrap();
     assert_eq!(body["data"]["total_pages"], 2); // ceil(21/20) = 2
     assert_eq!(body["data"]["total_items"], 21);

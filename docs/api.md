@@ -562,6 +562,57 @@ List paginated articles.
 
 **Response / 响应:** `200 OK` (Same format as `GET /api/admin/articles` / 格式同 `GET /api/admin/articles`)
 
+### GET /api/admin/articles/search
+Search articles by title or content, ordered by publish_at descending.
+
+按标题或正文搜索文章，结果按 publish_at 降序排列。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Query Parameters / 查询参数:**
+- `q` (string, optional) - Search keyword (empty searches all articles) / 搜索关键词（为空时搜索全部文章）
+- `page_size` (integer, optional) - Maximum returned items (default: 20) / 最大返回项目数（默认：20）
+
+**Response / 响应:** `200 OK` (Same format as `GET /api/admin/articles` / 格式同 `GET /api/admin/articles`)
+
+### GET /api/admin/articles/search/page
+Get total pages and item count for article search results.
+
+获取文章搜索结果的总页数和项目数。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Query Parameters / 查询参数:**
+- `q` (string, optional) - Search keyword (empty searches all articles) / 搜索关键词（为空时搜索全部文章）
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "total_pages": 2,
+    "total_items": 25
+  }
+}
+```
+
+### GET /api/admin/articles/search/page/:page
+List paginated article search results.
+
+分页列出文章搜索结果。
+
+**Authentication / 鉴权:** Admin JWT / 管理员 JWT
+
+**Path Parameters / 路径参数:**
+- `page` (integer) - Page number / 页码
+
+**Query Parameters / 查询参数:**
+- `q` (string, optional) - Search keyword (empty searches all articles) / 搜索关键词（为空时搜索全部文章）
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK` (Same format as `GET /api/admin/articles` / 格式同 `GET /api/admin/articles`)
+
 ### GET /api/admin/articles/:hash_id
 Get detail for a specific article.
 
@@ -1338,6 +1389,67 @@ List paginated visible articles.
 - `page` (integer) - Page number / 页码
 
 **Query Parameters / 查询参数:**
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK` (Same format as `GET /api/users/articles` / 格式同 `GET /api/users/articles`)
+
+---
+
+### GET /api/users/articles/search
+Search visible articles by title or content, ordered by publish_at descending.
+
+按标题或正文搜索当前用户可见文章，结果按 publish_at 降序排列。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Query Parameters / 查询参数:**
+- `q` (string, optional) - Search keyword (empty searches all visible articles) / 搜索关键词（为空时搜索所有可见文章）
+- `page_size` (integer, optional) - Maximum returned items (default: 20) / 最大返回项目数（默认：20）
+
+**Response / 响应:** `200 OK` (Same format as `GET /api/users/articles` / 格式同 `GET /api/users/articles`)
+
+**Notes / 注意事项:**
+- Visibility and `accessible` are determined by user's tier at article `publish_at` time / 可见性和 `accessible` 均由用户在文章 `publish_at` 时间的等级决定
+- Public articles can appear even when `accessible = false` / 公开文章即使 `accessible = false` 也可以出现在结果中
+
+---
+
+### GET /api/users/articles/search/page
+Get total pages and item count for visible article search results.
+
+获取当前用户可见文章搜索结果的总页数和项目数。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Query Parameters / 查询参数:**
+- `q` (string, optional) - Search keyword (empty searches all visible articles) / 搜索关键词（为空时搜索所有可见文章）
+- `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
+
+**Response / 响应:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "total_pages": 2,
+    "total_items": 25
+  }
+}
+```
+
+---
+
+### GET /api/users/articles/search/page/:page
+List paginated visible article search results.
+
+分页列出当前用户可见文章搜索结果。
+
+**Authentication / 鉴权:** User JWT required / 需要用户 JWT
+
+**Path Parameters / 路径参数:**
+- `page` (integer) - Page number / 页码
+
+**Query Parameters / 查询参数:**
+- `q` (string, optional) - Search keyword (empty searches all visible articles) / 搜索关键词（为空时搜索所有可见文章）
 - `page_size` (integer, optional) - Items per page (default: 20) / 每页项目数（默认：20）
 
 **Response / 响应:** `200 OK` (Same format as `GET /api/users/articles` / 格式同 `GET /api/users/articles`)

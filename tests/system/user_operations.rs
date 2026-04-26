@@ -299,8 +299,7 @@ async fn get_own_subscriptions_with_data() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "sub_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "sub_user", "pass123").await;
     let user_token = login_as_user(&server, "sub_user", "pass123").await;
 
     // 管理员为用户创建两个订阅
@@ -349,8 +348,7 @@ async fn get_own_subscriptions_excludes_note() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "note_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "note_user", "pass123").await;
     let user_token = login_as_user(&server, "note_user", "pass123").await;
 
     // 创建带 note 的订阅
@@ -394,8 +392,7 @@ async fn get_own_subscriptions_excludes_ids() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_hash_id =
-        create_test_user(&server, &admin_token, "id_user", "pass123").await;
+    let user_hash_id = create_test_user(&server, &admin_token, "id_user", "pass123").await;
     let user_token = login_as_user(&server, "id_user", "pass123").await;
 
     create_subscription(
@@ -431,10 +428,8 @@ async fn get_own_subscriptions_isolated_by_user() {
     let server = common::TestServer::spawn().await;
     let admin_token = server.admin_login().await;
 
-    let user_a_hash =
-        create_test_user(&server, &admin_token, "iso_user_a", "pass_a").await;
-    let user_b_hash =
-        create_test_user(&server, &admin_token, "iso_user_b", "pass_b").await;
+    let user_a_hash = create_test_user(&server, &admin_token, "iso_user_a", "pass_a").await;
+    let user_b_hash = create_test_user(&server, &admin_token, "iso_user_b", "pass_b").await;
 
     // 为两个用户分别创建不同等级的订阅
     create_subscription(

@@ -1,10 +1,10 @@
-// User articles handler with time-based tier access control
+﻿// User articles handler with time-based tier access control
 //
 // // 用户文章处理器，带基于时间的等级访问控制
 
 use super::auth::UserState;
 use crate::error::AppError;
-use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery};
+use crate::handlers::common::{ApiResponse, PageCountResponse, PaginationQuery, SearchQuery};
 use crate::middleware::auth::AuthClaims;
 use crate::models::article::Article;
 use crate::utils::hashid::HashIdManager;
@@ -311,7 +311,7 @@ pub async fn get_articles_page_count(
     let mut total_items = 0;
     for article in &articles {
         let user_tier_at_publish =
-            get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
 
         let can_access = user_tier_at_publish >= article.required_tier;
 
@@ -376,7 +376,221 @@ pub async fn list_articles_paginated(
     let mut items: Vec<ArticleListItem> = Vec::new();
     for article in &articles {
         let user_tier_at_publish =
-            get_user_tier_at_time(&state.pool, user_id, article.created_at).await?;
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
+
+        let can_access = user_tier_at_publish >= article.required_tier;
+
+        if can_access || article.is_public {
+            items.push(article.to_list_item(&state.hashid_manager, user_tier_at_publish)?);
+        }
+    }
+
+    let total_filtered = items.len();
+
+    // Manual pagination
+    let start_index = offset as usize;
+    let end_index = std::cmp::min(start_index + page_size as usize, total_filtered);
+
+    let paginated_items = if start_index < total_filtered {
+        items[start_index..end_index].to_vec()
+    } else {
+        vec![]
+    };
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: paginated_items,
+    }))
+}
+
+/// Search articles handler for users.
+///
+/// Returns a list of visible articles matching the search query.
+/// Search is performed on title and content fields.
+/// An article is visible if:
+/// - User had sufficient tier at article publish time (accessible = true), OR
+/// - Article is public (is_public = true) but user didn't have tier (accessible = false)
+///
+/// # Arguments
+/// * `state` - Application state containing database pool and HashID manager
+/// * `claims` - Authenticated user claims from JWT
+/// * `query` - Search query parameters including search keyword and page size
+///
+/// # Returns
+/// Returns a list of visible articles matching the search query with accessibility indicators.
+///
+/// # Errors
+/// Returns `Internal` error if token subject format is invalid.
+/// Returns `Database` error on database failures.
+//
+// // 用户搜索文章处理器。
+// //
+// // 返回匹配搜索查询的可见文章列表。
+// // 搜索在标题和内容字段上执行。
+// // 文章可见的条件：
+// // - 用户在文章发布时有足够等级（accessible = true），或者
+// // - 文章是公开的（is_public = true）但用户没有足够等级（accessible = false）
+// //
+// // # 参数
+// // * `state` - 包含数据库连接池和 HashID 管理器的应用状态
+// // * `claims` - 来自 JWT 的已认证用户声明
+// // * `query` - 搜索查询参数，包括搜索关键字和页面大小
+// //
+// // # 返回
+// // 返回带有可访问性指示的匹配搜索查询的可见文章列表。
+// //
+// // # 错误
+// // 如果令牌主题格式无效，返回 `Internal` 错误。
+// // 数据库失败时返回 `Database` 错误。
+pub async fn search_articles(
+    State(state): State<UserState>,
+    claims: AuthClaims,
+    Query(query): Query<SearchQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let user_hash_id = claims
+        .0
+        .sub
+        .strip_prefix("user:")
+        .ok_or_else(|| AppError::Internal("Invalid token subject format".to_string()))?;
+
+    let user_id = state.hashid_manager.decode(user_hash_id)?;
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let search_term = query.q.unwrap_or_default();
+    let search_pattern = format!("%{}%", search_term);
+
+    let articles = sqlx::query_as::<_, Article>(
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
+         FROM articles
+         WHERE title LIKE ? OR content LIKE ?
+         ORDER BY publish_at DESC"
+    )
+    .bind(&search_pattern)
+    .bind(&search_pattern)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // 1. 先按用户权限过滤，再截取结果，避免 SQL LIMIT 截到不可见文章导致返回数量不足。
+    let mut items: Vec<ArticleListItem> = Vec::new();
+    for article in &articles {
+        let user_tier_at_publish =
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
+
+        let can_access = user_tier_at_publish >= article.required_tier;
+
+        if can_access || article.is_public {
+            items.push(article.to_list_item(&state.hashid_manager, user_tier_at_publish)?);
+        }
+    }
+
+    items.truncate(page_size as usize);
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: items,
+    }))
+}
+
+/// Get total pages for search results for users.
+///
+/// Returns the total number of pages and items based on page_size for search results.
+//
+// // 获取用户搜索结果总页数。
+// //
+// // 基于 page_size 返回搜索结果的总页数和总项目数。
+pub async fn get_search_page_count(
+    State(state): State<UserState>,
+    claims: AuthClaims,
+    Query(query): Query<SearchQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let user_hash_id = claims
+        .0
+        .sub
+        .strip_prefix("user:")
+        .ok_or_else(|| AppError::Internal("Invalid token subject format".to_string()))?;
+
+    let user_id = state.hashid_manager.decode(user_hash_id)?;
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let search_term = query.q.unwrap_or_default();
+    let search_pattern = format!("%{}%", search_term);
+
+    let articles = sqlx::query_as::<_, Article>(
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
+         FROM articles
+         WHERE title LIKE ? OR content LIKE ?"
+    )
+    .bind(&search_pattern)
+    .bind(&search_pattern)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut total_items = 0;
+    for article in &articles {
+        let user_tier_at_publish =
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
+
+        let can_access = user_tier_at_publish >= article.required_tier;
+
+        if can_access || article.is_public {
+            total_items += 1;
+        }
+    }
+
+    let total_pages = (total_items + page_size - 1) / page_size;
+
+    Ok(Json(ApiResponse {
+        success: true,
+        data: PageCountResponse {
+            total_pages,
+            total_items,
+        },
+    }))
+}
+
+/// Search articles paginated for users.
+///
+/// Returns a specific page of visible articles matching the search query based on page and page_size.
+//
+// // 分页搜索用户可见文章。
+// //
+// // 基于 page 和 page_size 返回匹配搜索查询的特定页可见文章。
+pub async fn search_articles_paginated(
+    State(state): State<UserState>,
+    claims: AuthClaims,
+    Path(page): Path<u32>,
+    Query(query): Query<SearchQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let user_hash_id = claims
+        .0
+        .sub
+        .strip_prefix("user:")
+        .ok_or_else(|| AppError::Internal("Invalid token subject format".to_string()))?;
+
+    let user_id = state.hashid_manager.decode(user_hash_id)?;
+
+    let page_size = query.page_size.unwrap_or(20).max(1);
+    let page = page.max(1);
+    let offset = (page - 1) * page_size;
+    let search_term = query.q.unwrap_or_default();
+    let search_pattern = format!("%{}%", search_term);
+
+    let articles = sqlx::query_as::<_, Article>(
+        "SELECT id, title, cover_image, content, required_tier, is_public, file_links, publish_at, created_at, updated_at
+         FROM articles
+         WHERE title LIKE ? OR content LIKE ?
+         ORDER BY publish_at DESC"
+    )
+    .bind(&search_pattern)
+    .bind(&search_pattern)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut items: Vec<ArticleListItem> = Vec::new();
+    for article in &articles {
+        let user_tier_at_publish =
+            get_user_tier_at_time(&state.pool, user_id, article.publish_at).await?;
 
         let can_access = user_tier_at_publish >= article.required_tier;
 

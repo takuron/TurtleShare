@@ -5,7 +5,9 @@
 use super::auth::AdminState;
 use crate::error::AppError;
 use crate::handlers::common::ApiResponse;
-use crate::models::tier_description::{TierDescription, TierDescriptionsData, UpsertTierDescriptionRequest};
+use crate::models::tier_description::{
+    TierDescription, TierDescriptionsData, UpsertTierDescriptionRequest,
+};
 use axum::{
     Json,
     extract::{Path, State},
@@ -59,7 +61,8 @@ pub async fn upsert_tier_description(
     // 2. 验证至少有一个文本字段非空
     if name.is_none() && description.is_none() && price.is_none() && purchase_url.is_none() {
         return Err(AppError::ValidationError(
-            "at least one of name, description, price, or purchase_url must not be empty".to_string(),
+            "at least one of name, description, price, or purchase_url must not be empty"
+                .to_string(),
         ));
     }
 
@@ -157,20 +160,14 @@ pub async fn delete_tier_description(
     // 1. 读取现有的等级说明数据
     let mut data = match fetch_tier_descriptions(&state.pool).await? {
         Some(d) => d,
-        None => {
-            return Err(AppError::NotFound(
-                "Tier description not found".to_string(),
-            ))
-        }
+        None => return Err(AppError::NotFound("Tier description not found".to_string())),
     };
 
     // 2. 查找并删除
     let original_len = data.tiers.len();
     data.tiers.retain(|t| t.tier != tier);
     if data.tiers.len() == original_len {
-        return Err(AppError::NotFound(
-            "Tier description not found".to_string(),
-        ));
+        return Err(AppError::NotFound("Tier description not found".to_string()));
     }
 
     let now = SystemTime::now()
@@ -202,12 +199,11 @@ pub async fn delete_tier_description(
 async fn fetch_tier_descriptions(
     pool: &sqlx::SqlitePool,
 ) -> Result<Option<TierDescriptionsData>, AppError> {
-    let row: Option<(String,)> = sqlx::query_as(
-        "SELECT value FROM kv_store WHERE key = 'tier_descriptions'",
-    )
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| AppError::Database(e.to_string()))?;
+    let row: Option<(String,)> =
+        sqlx::query_as("SELECT value FROM kv_store WHERE key = 'tier_descriptions'")
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
 
     match row {
         Some((value,)) => {

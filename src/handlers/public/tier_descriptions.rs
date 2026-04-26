@@ -6,11 +6,7 @@ use crate::error::AppError;
 use crate::handlers::common::ApiResponse;
 use crate::handlers::public::PublicState;
 use crate::models::tier_description::TierDescriptionsData;
-use axum::{
-    Json,
-    extract::State,
-    response::IntoResponse,
-};
+use axum::{Json, extract::State, response::IntoResponse};
 
 /// Get all tier descriptions.
 ///
@@ -41,20 +37,16 @@ pub async fn get_tier_descriptions(
     State(state): State<PublicState>,
 ) -> Result<impl IntoResponse, AppError> {
     // 1. 从 kv_store 读取等级说明
-    let row: Option<(String,)> = sqlx::query_as(
-        "SELECT value FROM kv_store WHERE key = 'tier_descriptions'",
-    )
-    .fetch_optional(&state.pool)
-    .await
-    .map_err(|e| AppError::Database(e.to_string()))?;
+    let row: Option<(String,)> =
+        sqlx::query_as("SELECT value FROM kv_store WHERE key = 'tier_descriptions'")
+            .fetch_optional(&state.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
 
     // 2. 解析数据；如果不存在，返回空列表和 updated_at = -1
     let td = match row {
-        Some((value,)) => {
-            serde_json::from_str::<TierDescriptionsData>(&value).map_err(|e| {
-                AppError::Internal(format!("Failed to parse tier_descriptions: {}", e))
-            })?
-        }
+        Some((value,)) => serde_json::from_str::<TierDescriptionsData>(&value)
+            .map_err(|e| AppError::Internal(format!("Failed to parse tier_descriptions: {}", e)))?,
         None => TierDescriptionsData {
             tiers: Vec::new(),
             updated_at: -1,
