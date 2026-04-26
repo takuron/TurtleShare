@@ -103,6 +103,18 @@ pub fn create_router(
             get(admin::articles::list_articles_paginated),
         )
         .route(
+            "/articles/search",
+            get(admin::articles::search_articles),
+        )
+        .route(
+            "/articles/search/page",
+            get(admin::articles::get_search_page_count),
+        )
+        .route(
+            "/articles/search/page/{page}",
+            get(admin::articles::search_articles_paginated),
+        )
+        .route(
             "/articles/{hash_id}",
             get(admin::articles::get_article)
                 .put(admin::articles::update_article)
@@ -155,6 +167,18 @@ pub fn create_router(
         .route(
             "/articles/page/{page}",
             get(user::articles::list_articles_paginated),
+        )
+        .route(
+            "/articles/search",
+            get(user::articles::search_articles),
+        )
+        .route(
+            "/articles/search/page",
+            get(user::articles::get_search_page_count),
+        )
+        .route(
+            "/articles/search/page/{page}",
+            get(user::articles::search_articles_paginated),
         )
         .route("/articles/{hash_id}", get(user::articles::get_article))
         .route_layer(axum::middleware::from_fn_with_state(

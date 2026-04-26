@@ -73,6 +73,18 @@ pub fn routes(siteinfo: SiteInfoConfig, state: PublicState) -> Router {
             "/api/public/articles/page/{page}",
             get(articles::list_articles_paginated),
         )
+        .route(
+            "/api/public/articles/search",
+            get(articles::search_articles),
+        )
+        .route(
+            "/api/public/articles/search/page",
+            get(articles::get_search_page_count),
+        )
+        .route(
+            "/api/public/articles/search/page/{page}",
+            get(articles::search_articles_paginated),
+        )
         .route("/api/public/articles/{hash_id}", get(articles::get_article))
         .with_state(state)
 }
