@@ -5,13 +5,13 @@ use super::public;
 use super::user;
 use crate::config::Config;
 use crate::error::Result;
-use crate::middleware::cors::{CorsPolicy, enforce_cors};
+use crate::middleware::cors::{enforce_cors, CorsPolicy};
 use crate::middleware::rate_limiter::global_rate_limit;
 use crate::utils::{hashid::HashIdManager, jwt::JwtManager, rate_limiter::RateLimiter};
 use axum::{
-    Extension, Router,
     extract::DefaultBodyLimit,
     routing::{delete, get, post, put},
+    Extension, Router,
 };
 use std::sync::Arc;
 
@@ -102,7 +102,10 @@ pub fn create_router(
             "/articles/page/{page}",
             get(admin::articles::list_articles_paginated),
         )
-        .route("/articles/search", get(admin::articles::search_articles))
+        .route(
+            "/articles/search",
+            get(admin::articles::search_articles),
+        )
         .route(
             "/articles/search/page",
             get(admin::articles::get_search_page_count),
@@ -165,7 +168,10 @@ pub fn create_router(
             "/articles/page/{page}",
             get(user::articles::list_articles_paginated),
         )
-        .route("/articles/search", get(user::articles::search_articles))
+        .route(
+            "/articles/search",
+            get(user::articles::search_articles),
+        )
         .route(
             "/articles/search/page",
             get(user::articles::get_search_page_count),
